@@ -17,10 +17,8 @@ public class AsynchronusInterceptor implements MethodInterceptor {
 		this.methodInterceptor = methodInterceptor;
 	}
 	
-	@Override
 	public Object intercept(final Object obj, final Method method, final Object[] args, final MethodProxy proxy) throws Throwable {
 		executor.execute(new Runnable() {
-			@Override
 			public void run() {
 				try {
 					// the wrapped method intercepter should invoke the method 

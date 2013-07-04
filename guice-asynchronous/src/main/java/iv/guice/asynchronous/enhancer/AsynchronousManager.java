@@ -36,7 +36,6 @@ public class AsynchronousManager extends ExceptionHandler implements Asynchronou
 			this.notifyAll();
 	}
 
-	@Override
 	public void shutdown() throws InterruptedException {
 		synchronized(this) {
 			this.isShutdown = true;
@@ -47,33 +46,27 @@ public class AsynchronousManager extends ExceptionHandler implements Asynchronou
 		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 	}
 
-	@Override
 	public void execute(Runnable command) {
 		startTask();
 		executor.execute(new Task(command));
 	}
 
-	@Override
 	public int getTasksStarted() {
 		return tasksStarted;
 	}
 
-	@Override
 	public int getTasksCompleted() {
 		return tasksCompleted;
 	}
 
-	@Override
 	public int getExceptionsThrown() {
 		return exceptionsThrown;
 	}
 
-	@Override
 	public Executor getExecutor() {
 		return this;
 	}
 
-	@Override
 	public boolean isShutdown() {
 		return isShutdown || executor.isShutdown();
 	}
@@ -91,7 +84,6 @@ public class AsynchronousManager extends ExceptionHandler implements Asynchronou
 			this.task = task;
 		}
 		
-		@Override
 		public void run() {
 			try{
 				task.run();

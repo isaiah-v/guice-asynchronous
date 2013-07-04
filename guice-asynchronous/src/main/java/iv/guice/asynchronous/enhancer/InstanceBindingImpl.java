@@ -24,56 +24,46 @@ public class InstanceBindingImpl<T> implements InstanceBinding<T> {
 		this.source = source;
 	}
 	
-	@Override
 	public Key<T> getKey() {
 		return key;
 	}
 
-	@Override
 	public Provider<T> getProvider() {
 		// no provider
 		return null;
 	}
 
-	@Override
 	public <V> V acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
 		return visitor.visit(this);
 	}
 
-	@Override
 	public <V> V acceptScopingVisitor(BindingScopingVisitor<V> visitor) {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public Object getSource() {
 		return source;
 	}
 
-	@Override
 	public <V> V acceptVisitor(ElementVisitor<V> visitor) {
 		return visitor.visit(this);
 	}
 
-	@Override
 	public void applyTo(Binder binder) {
 		if(source!=null)
 			binder = binder.withSource(source);
 		binder.bind(getKey()).toInstance(getInstance());
 	}
 
-	@Override
 	public Set<Dependency<?>> getDependencies() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
 	public T getInstance() {
 		return instance;
 	}
 
-	@Override
 	public Set<InjectionPoint> getInjectionPoints() {
 		// TODO Auto-generated method stub
 		return null;

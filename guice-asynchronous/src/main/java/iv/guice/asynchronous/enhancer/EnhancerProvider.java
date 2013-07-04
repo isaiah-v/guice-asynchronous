@@ -16,7 +16,6 @@ class EnhancerProvider<T> implements Provider<T> {
 	
 	
 	@SuppressWarnings("unchecked")
-	@Override
 	public T get() {
 		return injectMembers((T)enhancer.create());
 	}

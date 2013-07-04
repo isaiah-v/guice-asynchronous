@@ -30,7 +30,6 @@ public class FailFastInterceptor implements MethodInterceptor {
 		this.logger = logger;
 	}
 	
-	@Override
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		if(context.getExceptionsThrown()>0) {
 			logger.warning("FAILFAST: skipping task: " + invocation.getMethod());

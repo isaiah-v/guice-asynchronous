@@ -75,7 +75,6 @@ public class EnhancerFactory {
 			this.filterMap = filterMap;
 		}
 		
-		@Override
 		public int accept(Method method) {
 			Integer i = filterMap.get(method);
 			return i==null ? 0 : i;

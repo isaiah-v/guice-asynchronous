@@ -7,7 +7,6 @@ import org.aopalliance.intercept.MethodInvocation;
 
 public abstract class ExceptionHandler implements MethodInterceptor {
 	
-	@Override
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		try {
 			return invocation.proceed();

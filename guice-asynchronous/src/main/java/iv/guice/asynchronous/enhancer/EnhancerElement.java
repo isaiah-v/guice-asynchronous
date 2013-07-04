@@ -24,12 +24,10 @@ public class EnhancerElement<T> implements Element {
 		this.enhancer = enhancer;
 	}
 	
-	@Override
 	public Object getSource() {
 		return source;
 	}
 
-	@Override
 	public void applyTo(Binder binder) {
 		if(this.source!=null) binder = binder.withSource(source);
 		final Key<T> key = this.getKey();
@@ -54,7 +52,6 @@ public class EnhancerElement<T> implements Element {
 		return enhancer;
 	}
 
-	@Override
 	public <V> V acceptVisitor(ElementVisitor<V> visitor) {
 		// not needed
 		throw new UnsupportedOperationException();

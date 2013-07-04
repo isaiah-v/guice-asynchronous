@@ -36,7 +36,6 @@ public class MyThreadFactory implements ThreadFactory {
 		this(prefix, DEFAULT_IS_DAEMON, priority);
 	}
 	
-	@Override
 	public Thread newThread(Runnable r) {
 		Thread value = new Thread(group,r,namePrefix+(count.getAndIncrement()));
 		
