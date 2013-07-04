@@ -1,4 +1,10 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.enhancer;
+
+import iv.guice.asynchronous.impl.aopclass.AopClass;
+import iv.guice.asynchronous.impl.aopclass.AopMethod;
+import iv.guice.asynchronous.impl.cglibcallbacks.AsynchronusInterceptor;
+import iv.guice.asynchronous.impl.cglibcallbacks.BasicNoOp;
+import iv.guice.asynchronous.impl.cglibcallbacks.DirectInterceptor;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -16,9 +22,21 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.NoOp;
 
+/**
+ * Creates asynchronous {@link Enhancer} objects. 
+ * @author isaiah
+ */
 public class EnhancerFactory {
 	
-	@SuppressWarnings("rawtypes")
+	/**
+	 * Creates an asynchronous {@link Enhancer} based on the given {@link AopClass}
+	 * @param executor
+	 * 		The executor used to run asynchronous tasks
+	 * @param aopClass
+	 * 		The aop class that defines the executor's structure
+	 * @return
+	 * 		A new asynchronous {@link Enhancer} based on the given {@link AopClass}
+	 */
 	public static Enhancer createEnhancer(Executor executor, AopClass<?> aopClass) {
 		Class<?> clazz = aopClass.getKey().getTypeLiteral().getRawType();
 		
@@ -31,6 +49,8 @@ public class EnhancerFactory {
 		
 		Map<Method, Integer> filterMap = new HashMap<Method, Integer>();
 		List<Callback> callbackList = new ArrayList<Callback>();
+		
+		@SuppressWarnings("rawtypes")
 		List<Class> typeList = new ArrayList<Class>(); 
 		
 		// NoOp at index=0
@@ -58,6 +78,8 @@ public class EnhancerFactory {
 		
 		CallbackFilter callbackFilter = new EnhancerCallbackFilter(filterMap);
 		Callback[] callbacks = callbackList.toArray(new Callback[callbackList.size()]);
+		
+		@SuppressWarnings("rawtypes")
 		Class[] callbackTypes = typeList.toArray(new Class[typeList.size()]);
 		
 		enhancer.setCallbackFilter(callbackFilter);
@@ -67,6 +89,10 @@ public class EnhancerFactory {
 		return enhancer;
 	}
 	
+	/**
+	 * The {@link Callback} asynchronous {@link Enhancer}'s 
+	 * @author isaiah
+	 */
 	private static class EnhancerCallbackFilter implements CallbackFilter {
 
 		private final Map<Method,Integer> filterMap;

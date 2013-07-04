@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.cglibcallbacks;
 
 import java.lang.reflect.Method;
 

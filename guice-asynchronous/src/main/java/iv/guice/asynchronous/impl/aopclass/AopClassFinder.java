@@ -1,6 +1,7 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.aopclass;
 
 import iv.guice.asynchronous.Asynchronous;
+import iv.guice.asynchronous.impl.elements.ElementSplice;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -12,22 +13,25 @@ import org.aopalliance.intercept.MethodInterceptor;
 
 import com.google.inject.Binding;
 import com.google.inject.Key;
+import com.google.inject.spi.DefaultBindingTargetVisitor;
 import com.google.inject.spi.InterceptorBinding;
+import com.google.inject.spi.LinkedKeyBinding;
+import com.google.inject.spi.UntargettedBinding;
 
 public class AopClassFinder {
 	private AopClassFinder() {}
 	
-	public static AopClass<?>[] findAopClasses(ElementsBean bindings) {
+	public static AopClass<?>[] findAopClasses(ElementSplice elements) {
 		Collection<AopClass<?>> value = new ArrayList<AopClass<?>>();
 		
-		BindingsTargetVisitor tv = new BindingsTargetVisitor(bindings);
-		for(Binding<?> b : bindings.getBindings().values()) {
+		BindingsTargetVisitor tv = new BindingsTargetVisitor(elements);
+		for(Binding<?> b : elements.getBindings().values()) {
 			Key<?> key = b.acceptTargetVisitor(tv);
 			if(key==null) continue;
 			
 			Object source = b.getSource();
 			
-			AopMethod[] methods = getAopMethods(key, bindings);
+			AopMethod[] methods = getAopMethods(key, elements);
 			
 			value.add(createAopClass(source, key, methods));
 		}
@@ -36,7 +40,7 @@ public class AopClassFinder {
 	}
 	
 	
-	private static AopMethod[] getAopMethods(Key<?> key, ElementsBean bindings) {
+	private static AopMethod[] getAopMethods(Key<?> key, ElementSplice elements) {
 		if(key==null) return null;
 		Class<?> clazz = key.getTypeLiteral().getRawType();
 		
@@ -46,7 +50,7 @@ public class AopClassFinder {
 			boolean isAsynchronous = method.isAnnotationPresent(Asynchronous.class);
 			
 			List<MethodInterceptor> list = null;
-			for(InterceptorBinding ib : bindings.getInterceptors()) {
+			for(InterceptorBinding ib : elements.getInterceptors()) {
 				if(!ib.getClassMatcher().matches(clazz) || !ib.getMethodMatcher().matches(method))
 					continue;
 				
@@ -79,4 +83,28 @@ public class AopClassFinder {
 		
 		return aopClass;
 	}
+	
+	private static class BindingsTargetVisitor extends DefaultBindingTargetVisitor<Object, Key<?>> {
+		private final ElementSplice elementViewer;
+		
+		BindingsTargetVisitor(ElementSplice elementViewer) {
+			this.elementViewer = elementViewer;
+		}
+
+		@Override
+		public Key<?> visit(LinkedKeyBinding<? extends Object> binding) {
+			Binding<?> targetBinding = elementViewer.getBindings().get(binding.getLinkedKey());
+			if(targetBinding==null)
+				return binding.getLinkedKey();
+			else
+				return null; // only interested in the end target class
+		}
+
+		@Override
+		public Key<?> visit(UntargettedBinding<? extends Object> binding) {
+			Key<?> key = binding.getKey();
+			return key;
+		}
+	}
+
 }

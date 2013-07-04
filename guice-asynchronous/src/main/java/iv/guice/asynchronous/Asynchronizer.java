@@ -1,14 +1,14 @@
 package iv.guice.asynchronous;
 
-import iv.guice.asynchronous.enhancer.AopClass;
-import iv.guice.asynchronous.enhancer.AopClassFinder;
-import iv.guice.asynchronous.enhancer.AsynchronousManager;
-import iv.guice.asynchronous.enhancer.ElementsBean;
-import iv.guice.asynchronous.enhancer.ElementsBeanFactory;
-import iv.guice.asynchronous.enhancer.EnhancerElement;
-import iv.guice.asynchronous.enhancer.EnhancerFactory;
-import iv.guice.asynchronous.enhancer.InstanceBindingImpl;
-import iv.guice.asynchronous.enhancer.MyThreadFactory;
+import iv.guice.asynchronous.impl.aopclass.AopClass;
+import iv.guice.asynchronous.impl.aopclass.AopClassFinder;
+import iv.guice.asynchronous.impl.common.InstanceBindingImpl;
+import iv.guice.asynchronous.impl.common.MyThreadFactory;
+import iv.guice.asynchronous.impl.elements.ElementSplice;
+import iv.guice.asynchronous.impl.elements.ElementSpliceFactory;
+import iv.guice.asynchronous.impl.enhancer.EnhancerElement;
+import iv.guice.asynchronous.impl.enhancer.EnhancerFactory;
+import iv.guice.asynchronous.impl.manager.AsynchronousManager;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,7 +26,8 @@ import com.google.inject.spi.Elements;
 import com.google.inject.spi.InterceptorBindingFactory;
 
 public class Asynchronizer {
-	public static final String NAME_PACKAGE = "iv.guice-asynchronous";
+	private static final String NAME_PACKAGE = "iv.guice-asynchronous";
+	
 	public static final String NAME_EXECUTOR_SERVICE = NAME_PACKAGE + "/executorService";
 	public static final String NAME_SHUTDOWNABLE = NAME_PACKAGE + "/shutdownable";
 	
@@ -43,24 +44,24 @@ public class Asynchronizer {
 	public static final Module asynchronize(ExecutorService executor, Module... modules) {
 		AsynchronousManager aManager = new AsynchronousManager(executor);
 		
-		ElementsBean eb = ElementsBeanFactory.createElementsBean(modules);
-		eb.getInterceptors().add(
+		ElementSplice elements = ElementSpliceFactory.createElementsBean(modules);
+		elements.getInterceptors().add(
 				InterceptorBindingFactory.createInterceptorBinding(getSource(), Matchers.any(), Matchers.annotatedWith(Asynchronous.class), aManager));
 		
-		AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(eb);
+		AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
 		for(AopClass<?> aopClass : aopClasses) {
 			Enhancer e = EnhancerFactory.createEnhancer(aManager, aopClass);
 			EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass, e);
 			
-			eb.getBindings().remove(aopClass.getKey());
-			eb.getOthers().add(element);
+			elements.getBindings().remove(aopClass.getKey());
+			elements.getOthers().add(element);
 		}
 		
-		eb.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, new InstanceBindingImpl<AsynchronousContext>(KEY_ASYNCHRONOUS_CONTEXT, aManager, getSource()));
-		eb.getBindings().put(KEY_SHUTDOWNABLE, new InstanceBindingImpl<Shutdownable>(KEY_SHUTDOWNABLE, aManager, getSource()));
-		eb.getBindings().put(KEY_EXECUTOR_SERVICE, new InstanceBindingImpl<ExecutorService>(KEY_EXECUTOR_SERVICE, executor, getSource()));
+		elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, new InstanceBindingImpl<AsynchronousContext>(KEY_ASYNCHRONOUS_CONTEXT, aManager, getSource()));
+		elements.getBindings().put(KEY_SHUTDOWNABLE, new InstanceBindingImpl<Shutdownable>(KEY_SHUTDOWNABLE, aManager, getSource()));
+		elements.getBindings().put(KEY_EXECUTOR_SERVICE, new InstanceBindingImpl<ExecutorService>(KEY_EXECUTOR_SERVICE, executor, getSource()));
 		
-		return Elements.getModule(eb.createElementCollection());
+		return Elements.getModule(elements.createElementCollection());
 	}
 	
 	public static final Module asynchronize(Module... modules) {

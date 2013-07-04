@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.utils;
+package iv.guice.asynchronous.interceptors;
 
 import java.util.logging.Logger;
 
@@ -31,10 +31,16 @@ public class FailFastInterceptor implements MethodInterceptor {
 	}
 	
 	public Object invoke(MethodInvocation invocation) throws Throwable {
+		if(context==null) {
+			logger.warning("FAILFAST: asynchronous context not defined");
+			return invocation.proceed();
+		}
+		
 		if(context.getExceptionsThrown()>0) {
 			logger.warning("FAILFAST: skipping task: " + invocation.getMethod());
 			return null;
 		}
+		
 		return invocation.proceed();
 	}
 	

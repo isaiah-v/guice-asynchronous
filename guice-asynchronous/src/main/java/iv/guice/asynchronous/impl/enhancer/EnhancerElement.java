@@ -1,4 +1,6 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.enhancer;
+
+import iv.guice.asynchronous.impl.aopclass.AopClass;
 
 import java.lang.reflect.Type;
 
@@ -12,6 +14,13 @@ import com.google.inject.TypeLiteralFactory;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.ElementVisitor;
 
+/**
+ * Used to bind {@link #getKey()} to the classes produced by {@link #getEnhancer()}
+ * @author isaiah
+ * 
+ * @param <T>
+ * 		the binding type
+ */
 public class EnhancerElement<T> implements Element {
 
 	private final Object source;

@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.common;
 
 import java.util.Set;
 
@@ -56,6 +56,7 @@ public class InstanceBindingImpl<T> implements InstanceBinding<T> {
 	}
 
 	public Set<Dependency<?>> getDependencies() {
+		
 		// TODO Auto-generated method stub
 		return null;
 	}

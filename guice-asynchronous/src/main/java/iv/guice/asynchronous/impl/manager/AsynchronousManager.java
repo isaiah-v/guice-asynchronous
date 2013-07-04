@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.enhancer;
+package iv.guice.asynchronous.impl.manager;
 
 import iv.guice.asynchronous.Asynchronizer;
 import iv.guice.asynchronous.AsynchronousContext;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class AsynchronousManager extends ExceptionHandler implements AsynchronousContext, Executor, Shutdownable {
+public class AsynchronousManager extends ExceptionHandler implements AsynchronousContext, Shutdownable, Executor {
 
 	private final ExecutorService executor;
 	
