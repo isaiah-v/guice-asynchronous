@@ -17,6 +17,7 @@ import java.util.concurrent.Executor;
 import com.google.inject.internal.PublicInterceptorStackCallback;
 
 import net.sf.cglib.core.DefaultNamingPolicy;
+import net.sf.cglib.core.NamingPolicy;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
@@ -28,6 +29,14 @@ import net.sf.cglib.proxy.NoOp;
  * @author isaiah
  */
 public class EnhancerFactory {
+	
+	private static final NamingPolicy ASYNCHRONOUS_NAMING_POLICY = new DefaultNamingPolicy() {
+		@Override
+		protected String getTag() {
+			// Guice's stacktrace pruner looks for this tag 
+			return "ByGuice";
+		}
+	};
 	
 	/**
 	 * Creates an asynchronous {@link Enhancer} based on the given {@link AopClass}
@@ -43,9 +52,9 @@ public class EnhancerFactory {
 		
 		Enhancer enhancer = new Enhancer();
 		
+		enhancer.setNamingPolicy(ASYNCHRONOUS_NAMING_POLICY);
 		enhancer.setSuperclass(clazz);
-		enhancer.setUseFactory(false);
-		enhancer.setNamingPolicy(new DefaultNamingPolicy());
+		enhancer.setUseFactory(false);		
 		enhancer.setClassLoader(clazz.getClassLoader());
 		
 		Map<Method, Integer> filterMap = new HashMap<Method, Integer>();
