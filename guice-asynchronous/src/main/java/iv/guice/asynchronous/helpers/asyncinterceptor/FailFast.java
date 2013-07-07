@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.helpers.interceptor;
+package iv.guice.asynchronous.helpers.asyncinterceptor;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
