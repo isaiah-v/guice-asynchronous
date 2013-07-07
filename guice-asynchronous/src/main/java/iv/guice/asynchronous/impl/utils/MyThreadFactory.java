@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.impl.common;
+package iv.guice.asynchronous.impl.utils;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

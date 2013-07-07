@@ -5,6 +5,7 @@ import iv.guice.asynchronous.impl.aopclass.AopMethod;
 import iv.guice.asynchronous.impl.cglibcallbacks.AsynchronusInterceptor;
 import iv.guice.asynchronous.impl.cglibcallbacks.BasicNoOp;
 import iv.guice.asynchronous.impl.cglibcallbacks.DirectInterceptor;
+import iv.guice.asynchronous.impl.manager.ExceptionListener;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class EnhancerFactory {
 	 * @return
 	 * 		A new asynchronous {@link Enhancer} based on the given {@link AopClass}
 	 */
-	public static Enhancer createEnhancer(Executor executor, AopClass<?> aopClass) {
+	public static Enhancer createEnhancer(Executor executor, ExceptionListener exceptionListener, AopClass<?> aopClass) {
 		Class<?> clazz = aopClass.getKey().getTypeLiteral().getRawType();
 		
 		Enhancer enhancer = new Enhancer();
@@ -64,7 +65,7 @@ public class EnhancerFactory {
 			
 			MethodInterceptor mi = interceptors==null ? new DirectInterceptor() : new PublicInterceptorStackCallback(method.getMethod(), interceptors);
 			if(method.isAsynchronous())
-				mi = new AsynchronusInterceptor(executor, mi);
+				mi = new AsynchronusInterceptor(executor, exceptionListener, mi);
 			
 			boolean b1 = callbackList.add(mi);
 			boolean b2 = typeList.add(MethodInterceptor.class);

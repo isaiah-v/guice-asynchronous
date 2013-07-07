@@ -27,7 +27,7 @@ public class AopClassFinder {
 		BindingsTargetVisitor tv = new BindingsTargetVisitor(elements);
 		for(Binding<?> b : elements.getBindings().values()) {
 			Key<?> key = b.acceptTargetVisitor(tv);
-			if(key==null) continue;
+			if(key==null || !isAsyncClass(key)) continue;
 			
 			Object source = b.getSource();
 			
@@ -46,7 +46,7 @@ public class AopClassFinder {
 		
 		List<AopMethod> value = new LinkedList<AopMethod>();
 		
-		for(Method method : clazz.getMethods()) {
+		for(Method method : clazz.getDeclaredMethods()) {
 			boolean isAsynchronous = method.isAnnotationPresent(Asynchronous.class);
 			
 			List<MethodInterceptor> list = null;
@@ -67,6 +67,15 @@ public class AopClassFinder {
 		}
 		
 		return value.isEmpty() ? null : value.toArray(new AopMethod[value.size()]);
+	}
+	
+	private static boolean isAsyncClass(Key<?> key) {
+		Class<?> clazz = key.getTypeLiteral().getRawType();
+		
+		for(Method method : clazz.getDeclaredMethods()) {
+			if(method.isAnnotationPresent(Asynchronous.class)) return true;
+		}
+		return false;
 	}
 	
 	private static void validateAsynchronousSignature(Method method) {

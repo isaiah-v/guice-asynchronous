@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class AsynchronousManager extends ExceptionHandler implements AsynchronousContext, Shutdownable, Executor {
+public class AsynchronousManager implements AsynchronousContext, Shutdownable, Executor, ExceptionListener {
 
 	private final ExecutorService executor;
 	
@@ -71,8 +71,7 @@ public class AsynchronousManager extends ExceptionHandler implements Asynchronou
 		return isShutdown || executor.isShutdown();
 	}
 	
-	@Override
-	protected void onException(Method method, Throwable th) {
+	public synchronized void onException(Method method, Throwable th) {
 		exceptionsThrown++;
 	}
 	
@@ -87,6 +86,8 @@ public class AsynchronousManager extends ExceptionHandler implements Asynchronou
 		public void run() {
 			try{
 				task.run();
+			} catch (Throwable th) {
+				onException(null, th);
 			} finally {
 				endTask();
 			}

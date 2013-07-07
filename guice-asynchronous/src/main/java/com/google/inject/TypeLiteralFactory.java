@@ -12,4 +12,7 @@ public class TypeLiteralFactory {
 		return new TypeLiteral<T>(t);
 	}
 	
+	public static <T> TypeLiteral<T> createTypeLiteral(Class<T> type) {
+		return new TypeLiteral<T>(){};
+	}
 }

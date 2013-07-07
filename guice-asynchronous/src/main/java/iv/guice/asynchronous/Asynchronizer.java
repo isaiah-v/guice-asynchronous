@@ -2,13 +2,12 @@ package iv.guice.asynchronous;
 
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 import iv.guice.asynchronous.impl.aopclass.AopClassFinder;
-import iv.guice.asynchronous.impl.common.InstanceBindingImpl;
-import iv.guice.asynchronous.impl.common.MyThreadFactory;
 import iv.guice.asynchronous.impl.elements.ElementSplice;
 import iv.guice.asynchronous.impl.elements.ElementSpliceFactory;
 import iv.guice.asynchronous.impl.enhancer.EnhancerElement;
 import iv.guice.asynchronous.impl.enhancer.EnhancerFactory;
 import iv.guice.asynchronous.impl.manager.AsynchronousManager;
+import iv.guice.asynchronous.impl.utils.MyThreadFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,10 +19,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
 import com.google.inject.spi.Elements;
-import com.google.inject.spi.InterceptorBindingFactory;
+
+import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
 public class Asynchronizer {
 	private static final String NAME_PACKAGE = "iv.guice-asynchronous";
@@ -45,21 +44,19 @@ public class Asynchronizer {
 		AsynchronousManager aManager = new AsynchronousManager(executor);
 		
 		ElementSplice elements = ElementSpliceFactory.createElementsBean(modules);
-		elements.getInterceptors().add(
-				InterceptorBindingFactory.createInterceptorBinding(getSource(), Matchers.any(), Matchers.annotatedWith(Asynchronous.class), aManager));
 		
 		AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
 		for(AopClass<?> aopClass : aopClasses) {
-			Enhancer e = EnhancerFactory.createEnhancer(aManager, aopClass);
+			Enhancer e = EnhancerFactory.createEnhancer(aManager,aManager,aopClass);
 			EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass, e);
 			
 			elements.getBindings().remove(aopClass.getKey());
 			elements.getOthers().add(element);
 		}
 		
-		elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, new InstanceBindingImpl<AsynchronousContext>(KEY_ASYNCHRONOUS_CONTEXT, aManager, getSource()));
-		elements.getBindings().put(KEY_SHUTDOWNABLE, new InstanceBindingImpl<Shutdownable>(KEY_SHUTDOWNABLE, aManager, getSource()));
-		elements.getBindings().put(KEY_EXECUTOR_SERVICE, new InstanceBindingImpl<ExecutorService>(KEY_EXECUTOR_SERVICE, executor, getSource()));
+		elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, bindInstance(KEY_ASYNCHRONOUS_CONTEXT, aManager));
+		elements.getBindings().put(KEY_SHUTDOWNABLE, bindInstance(KEY_SHUTDOWNABLE, aManager));
+		elements.getBindings().put(KEY_EXECUTOR_SERVICE, bindInstance(KEY_EXECUTOR_SERVICE, executor));
 		
 		return Elements.getModule(elements.createElementCollection());
 	}
@@ -72,9 +69,5 @@ public class Asynchronizer {
 	public static final void shutdown(Injector injector) throws InterruptedException {
 		Shutdownable shutdownable = injector.getInstance(KEY_SHUTDOWNABLE);
 		shutdownable.shutdown();
-	}
-	
-	private static Object getSource() {
-		return Thread.currentThread().getStackTrace()[2];
 	}
 }
