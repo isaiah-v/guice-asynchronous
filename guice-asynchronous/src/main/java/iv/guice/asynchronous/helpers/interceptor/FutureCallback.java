@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.interceptor;
+package iv.guice.asynchronous.helpers.interceptor;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

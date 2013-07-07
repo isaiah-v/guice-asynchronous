@@ -1,16 +1,16 @@
-package iv.guice.asynchronous.interceptor;
+package iv.guice.asynchronous.helpers.interceptor;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 /**
- * The {@link AsynchronousInterceptor} works in connection with the {@link Callback}
+ * The {@link AsyncInterceptor} works in connection with the {@link Callback}
  * interface.
  * 
  * @author isaiah
  * 
  */
-public class AsynchronousInterceptor implements MethodInterceptor {
+public class AsyncInterceptor implements MethodInterceptor {
 
 	private int thrownExceptions = 0;
 	
