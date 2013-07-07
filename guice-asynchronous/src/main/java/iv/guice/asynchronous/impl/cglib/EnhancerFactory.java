@@ -1,10 +1,7 @@
-package iv.guice.asynchronous.impl.enhancer;
+package iv.guice.asynchronous.impl.cglib;
 
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 import iv.guice.asynchronous.impl.aopclass.AopMethod;
-import iv.guice.asynchronous.impl.cglibcallbacks.AsynchronusInterceptor;
-import iv.guice.asynchronous.impl.cglibcallbacks.BasicNoOp;
-import iv.guice.asynchronous.impl.cglibcallbacks.DirectInterceptor;
 import iv.guice.asynchronous.impl.manager.ExceptionListener;
 
 import java.lang.reflect.Method;

@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.impl.enhancer;
+package iv.guice.asynchronous.impl.cglib;
 
 import net.sf.cglib.proxy.Enhancer;
 

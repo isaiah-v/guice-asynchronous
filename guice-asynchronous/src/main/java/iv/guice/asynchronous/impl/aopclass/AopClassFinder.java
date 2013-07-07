@@ -1,7 +1,7 @@
 package iv.guice.asynchronous.impl.aopclass;
 
 import iv.guice.asynchronous.Asynchronous;
-import iv.guice.asynchronous.impl.elements.ElementSplice;
+import iv.guice.asynchronous.impl.elements.ElementsBean;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import com.google.inject.spi.UntargettedBinding;
 public class AopClassFinder {
 	private AopClassFinder() {}
 	
-	public static AopClass<?>[] findAopClasses(ElementSplice elements) {
+	public static AopClass<?>[] findAopClasses(ElementsBean elements) {
 		Collection<AopClass<?>> value = new ArrayList<AopClass<?>>();
 		
 		BindingsTargetVisitor tv = new BindingsTargetVisitor(elements);
@@ -40,7 +40,7 @@ public class AopClassFinder {
 	}
 	
 	
-	private static AopMethod[] getAopMethods(Key<?> key, ElementSplice elements) {
+	private static AopMethod[] getAopMethods(Key<?> key, ElementsBean elements) {
 		if(key==null) return null;
 		Class<?> clazz = key.getTypeLiteral().getRawType();
 		
@@ -94,9 +94,9 @@ public class AopClassFinder {
 	}
 	
 	private static class BindingsTargetVisitor extends DefaultBindingTargetVisitor<Object, Key<?>> {
-		private final ElementSplice elementViewer;
+		private final ElementsBean elementViewer;
 		
-		BindingsTargetVisitor(ElementSplice elementViewer) {
+		BindingsTargetVisitor(ElementsBean elementViewer) {
 			this.elementViewer = elementViewer;
 		}
 

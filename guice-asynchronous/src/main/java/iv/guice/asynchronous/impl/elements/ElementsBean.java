@@ -9,13 +9,13 @@ import com.google.inject.Key;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.InterceptorBinding;
 
-public class ElementSplice {
+public class ElementsBean {
 	
 	private final Map<Key<?>, Binding<?>> bindings;
 	private final Collection<InterceptorBinding> interceptors;
 	private final Collection<Element> others;
 	
-	public ElementSplice(Map<Key<?>, Binding<?>> bindings, Collection<InterceptorBinding> interceptors, Collection<Element> others) {
+	public ElementsBean(Map<Key<?>, Binding<?>> bindings, Collection<InterceptorBinding> interceptors, Collection<Element> others) {
 		this.bindings = bindings;
 		this.interceptors = interceptors;
 		this.others = others;

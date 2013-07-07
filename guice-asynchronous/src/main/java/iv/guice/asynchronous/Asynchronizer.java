@@ -2,10 +2,10 @@ package iv.guice.asynchronous;
 
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 import iv.guice.asynchronous.impl.aopclass.AopClassFinder;
-import iv.guice.asynchronous.impl.elements.ElementSplice;
-import iv.guice.asynchronous.impl.elements.ElementSpliceFactory;
-import iv.guice.asynchronous.impl.enhancer.EnhancerElement;
-import iv.guice.asynchronous.impl.enhancer.EnhancerFactory;
+import iv.guice.asynchronous.impl.cglib.EnhancerElement;
+import iv.guice.asynchronous.impl.cglib.EnhancerFactory;
+import iv.guice.asynchronous.impl.elements.ElementsBean;
+import iv.guice.asynchronous.impl.elements.ElementsBeanFactory;
 import iv.guice.asynchronous.impl.manager.AsynchronousManager;
 import iv.guice.asynchronous.impl.utils.MyThreadFactory;
 
@@ -43,7 +43,7 @@ public class Asynchronizer {
 	public static final Module asynchronize(ExecutorService executor, Module... modules) {
 		AsynchronousManager aManager = new AsynchronousManager(executor);
 		
-		ElementSplice elements = ElementSpliceFactory.createElementsBean(modules);
+		ElementsBean elements = ElementsBeanFactory.createElementsBean(modules);
 		
 		AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
 		for(AopClass<?> aopClass : aopClasses) {

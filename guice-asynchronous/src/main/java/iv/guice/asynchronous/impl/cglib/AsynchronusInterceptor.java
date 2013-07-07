@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.impl.cglibcallbacks;
+package iv.guice.asynchronous.impl.cglib;
 
 import iv.guice.asynchronous.impl.manager.ExceptionListener;
 
@@ -9,7 +9,7 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 
-public class AsynchronusInterceptor implements MethodInterceptor {
+class AsynchronusInterceptor implements MethodInterceptor {
 
 	private final Executor executor;
 	private final MethodInterceptor methodInterceptor;

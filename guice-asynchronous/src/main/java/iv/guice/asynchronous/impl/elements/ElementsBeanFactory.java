@@ -13,15 +13,15 @@ import com.google.inject.spi.Element;
 import com.google.inject.spi.Elements;
 import com.google.inject.spi.InterceptorBinding;
 
-public class ElementSpliceFactory {
+public class ElementsBeanFactory {
 	
-	private ElementSpliceFactory() {}
+	private ElementsBeanFactory() {}
 	
-	public static ElementSplice createElementsBean(Module... modules) {
+	public static ElementsBean createElementsBean(Module... modules) {
 		return createElementsBean(Elements.getElements(modules));
 	}
 	
-	public static ElementSplice createElementsBean(Collection<Element> elements) {
+	public static ElementsBean createElementsBean(Collection<Element> elements) {
 		ElementsSpliceVisitor visitor = new ElementsSpliceVisitor();
 		for(Element e : elements) {
 			e.acceptVisitor(visitor);
@@ -53,8 +53,8 @@ public class ElementSpliceFactory {
 			return null;
 		}
 
-		public ElementSplice asElementsBean() {
-			return new ElementSplice(bindings,interceptors,others);
+		public ElementsBean asElementsBean() {
+			return new ElementsBean(bindings,interceptors,others);
 		}
 	}
 }

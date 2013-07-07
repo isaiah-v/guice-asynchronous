@@ -1,4 +1,4 @@
-package iv.guice.asynchronous.impl.enhancer;
+package iv.guice.asynchronous.impl.cglib;
 
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 
