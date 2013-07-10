@@ -15,6 +15,32 @@
  */
 package iv.guice.asynchronous;
 
+/**
+ * Used to shutdown the asynchronous service.
+ * 
+ * @author Isaiah van der Elst
+ */
 public interface Shutdownable {
-	public void shutdown() throws InterruptedException;
+
+    /**
+     * Cleanly shuts down the asynchronous service and waits for all tasks to
+     * complete. Even after this method is called, asynchronous tasks can be
+     * executed. When there are zero asynchronous tasks executing, the
+     * underlying executor service is shutdown and any further submissions will
+     * result in an exception.<br>
+     * <br>
+     * This method will unblock after the service has been completely shutdown
+     * or the thread is interrupted.
+     * 
+     * @throws InterruptedException
+     *             if the thread is interrupted while waiting
+     */
+    public void shutdown() throws InterruptedException;
+
+    /**
+     * Forcefully shuts down the asynchronous service. The underlying executor
+     * service service is immediately shutdown and any further submissions will
+     * result in an exception.<br>
+     */
+    public void shutdownNow();
 }

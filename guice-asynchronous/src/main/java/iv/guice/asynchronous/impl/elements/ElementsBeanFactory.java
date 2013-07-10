@@ -29,47 +29,47 @@ import com.google.inject.spi.Elements;
 import com.google.inject.spi.InterceptorBinding;
 
 public class ElementsBeanFactory {
-	
-	private ElementsBeanFactory() {}
-	
-	public static ElementsBean createElementsBean(Module... modules) {
-		return createElementsBean(Elements.getElements(modules));
-	}
-	
-	public static ElementsBean createElementsBean(Collection<Element> elements) {
-		ElementsSpliceVisitor visitor = new ElementsSpliceVisitor();
-		for(Element e : elements) {
-			e.acceptVisitor(visitor);
-		}
-		return visitor.asElementsBean();
-	}
-	
-	private static class ElementsSpliceVisitor extends DefaultElementVisitor<Void> {
 
-		private Collection<InterceptorBinding> interceptors = new ArrayList<InterceptorBinding>();
-		private Collection<Element> others = new ArrayList<Element>();
-		private Map<Key<?>, Binding<?>> bindings = new HashMap<Key<?>, Binding<?>>();
-		
-		@Override
-		public <T> Void visit(Binding<T> binding) {
-			bindings.put(binding.getKey(), binding);
-			return null;
-		}
-		
-		@Override
-		public Void visit(InterceptorBinding interceptorBinding) {
-			interceptors.add(interceptorBinding);
-			return null;
-		}
-		
-		@Override
-		protected Void visitOther(Element element) {
-			others.add(element);
-			return null;
-		}
+    private ElementsBeanFactory() {}
 
-		public ElementsBean asElementsBean() {
-			return new ElementsBean(bindings,interceptors,others);
-		}
-	}
+    public static ElementsBean createElementsBean(Module... modules) {
+        return createElementsBean(Elements.getElements(modules));
+    }
+
+    public static ElementsBean createElementsBean(Collection<Element> elements) {
+        ElementsSpliceVisitor visitor = new ElementsSpliceVisitor();
+        for (Element e : elements) {
+            e.acceptVisitor(visitor);
+        }
+        return visitor.asElementsBean();
+    }
+
+    private static class ElementsSpliceVisitor extends DefaultElementVisitor<Void> {
+
+        private Collection<InterceptorBinding> interceptors = new ArrayList<InterceptorBinding>();
+        private Collection<Element> others = new ArrayList<Element>();
+        private Map<Key<?>, Binding<?>> bindings = new HashMap<Key<?>, Binding<?>>();
+
+        @Override
+        public <T> Void visit(Binding<T> binding) {
+            bindings.put(binding.getKey(), binding);
+            return null;
+        }
+
+        @Override
+        public Void visit(InterceptorBinding interceptorBinding) {
+            interceptors.add(interceptorBinding);
+            return null;
+        }
+
+        @Override
+        protected Void visitOther(Element element) {
+            others.add(element);
+            return null;
+        }
+
+        public ElementsBean asElementsBean() {
+            return new ElementsBean(bindings, interceptors, others);
+        }
+    }
 }

@@ -23,35 +23,31 @@ import java.util.List;
 import org.aopalliance.intercept.MethodInterceptor;
 
 public class AopMethod {
-	private final Method method;
-	private final boolean isAsynchronous;
-	private final List<MethodInterceptor> interceptors;
 
-	public AopMethod(Method method, boolean isAsynchronous,
-			List<MethodInterceptor> interceptors) {
-		this.method = method;
-		this.isAsynchronous = isAsynchronous;
-		this.interceptors = interceptors == null ? null
-				: Collections
-						.unmodifiableList(new ArrayList<MethodInterceptor>(
-								interceptors));
-	}
+    private final Method method;
+    private final boolean isAsynchronous;
+    private final List<MethodInterceptor> interceptors;
 
-	public Method getMethod() {
-		return method;
-	}
+    public AopMethod(Method method, boolean isAsynchronous, List<MethodInterceptor> interceptors) {
+        this.method = method;
+        this.isAsynchronous = isAsynchronous;
+        this.interceptors = interceptors == null ? null : Collections.unmodifiableList(new ArrayList<MethodInterceptor>(interceptors));
+    }
 
-	public boolean isAsynchronous() {
-		return isAsynchronous;
-	}
+    public Method getMethod() {
+        return method;
+    }
 
-	public List<MethodInterceptor> getInterceptors() {
-		return interceptors;
-	}
+    public boolean isAsynchronous() {
+        return isAsynchronous;
+    }
 
-	@Override
-	public String toString() {
-		return "AopMethod [method=" + method + ", isAsynchronous="
-				+ isAsynchronous + ", interceptors=" + interceptors + "]";
-	}
+    public List<MethodInterceptor> getInterceptors() {
+        return interceptors;
+    }
+
+    @Override
+    public String toString() {
+        return "AopMethod [method=" + method + ", isAsynchronous=" + isAsynchronous + ", interceptors=" + interceptors + "]";
+    }
 }

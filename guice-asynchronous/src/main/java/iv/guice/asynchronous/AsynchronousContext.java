@@ -17,40 +17,53 @@ package iv.guice.asynchronous;
 
 import java.util.concurrent.Executor;
 
+/**
+ * This context gives users insight into the state of the asynchronous service.
+ * 
+ * @author Isaiah van der Elst
+ */
 public interface AsynchronousContext {
-	
-	/**
-	 * Returns the number of asynchronous tasks that have started 
-	 * @return
-	 * 		The number of asynchronous tasks that have started
-	 */
-	public int getTasksStarted();
-	
-	/**
-	 * Returns the number of asynchronous tasks that have completed
-	 * @return
-	 * 		The number of asynchronous tasks that have completed
-	 */
-	public int getTasksCompleted();
-	
-	/**
-	 * Returns the number of exceptions thrown while executing asynchronous tasks  
-	 * @return
-	 * 		The number of exceptions thrown while executing asynchronous tasks
-	 */
-	public int getExceptionsThrown();
-	
-	/**
-	 * Returns the executor used to process asynchronous tasks
-	 * @return
-	 * 		The executor used to process asynchronous tasks
-	 */
-	public Executor getExecutor();
-	
-	/**
-	 * Returns <code>true</code> if asynchronous service has been shutdown
-	 * @return
-	 * 		<code>true</code> if asynchronous service has been shutdown
-	 */
-	public boolean isShutdown();
+
+    /**
+     * Returns the number of asynchronous tasks that have started
+     * 
+     * @return The number of asynchronous tasks that have started
+     */
+    public int getTasksStarted();
+
+    /**
+     * Returns the number of asynchronous tasks that have completed
+     * 
+     * @return The number of asynchronous tasks that have completed
+     */
+    public int getTasksCompleted();
+
+    /**
+     * Returns the number of exceptions thrown while executing asynchronous
+     * tasks
+     * 
+     * @return The number of exceptions thrown while executing asynchronous
+     *         tasks
+     */
+    public int getExceptionsThrown();
+
+    /**
+     * Returns the executor used to process asynchronous tasks. Tasks submitted
+     * to the returned executor dose affect the state of the context. Submitting
+     * tasks to the executor may affect the following methods:
+     * {@link #getTasksStarted()}, {@link #getTasksCompleted()},
+     * {@link #getExceptionsThrown()}
+     * 
+     * @return the executor used to process asynchronous tasks
+     */
+    public Executor getExecutor();
+
+    /**
+     * Returns <code>true</code> if asynchronous service has been shutdown.
+     * 
+     * @return A <code>true</code> value is returned if a request has been made
+     *         to shutdown the asynchronous service or the underlying executor
+     *         service has been shutdown
+     */
+    public boolean isShutdown();
 }

@@ -21,60 +21,57 @@ import java.util.List;
 
 import org.aopalliance.intercept.MethodInvocation;
 
-class FailExceptionHandler {	
-	
-	Integer handle(Throwable th, MethodInvocation invocation) throws Throwable {
-		if(!invocation.getStaticPart().isAnnotationPresent(FailException.class))
-			return 0;
-		
-		return fail(invocation.getMethod(), invocation.getArguments(), th);
-	}
+class FailExceptionHandler {
 
-	private int fail(Method method, Object[] args, Throwable th) {
-		Callback<?>[] callbacks = findCallbacks(method, args);
+    Integer handle(Throwable th, MethodInvocation invocation) throws Throwable {
+        if (!invocation.getStaticPart().isAnnotationPresent(FailException.class)) return 0;
 
-		return fail(callbacks, th);
-	}
+        return fail(invocation.getMethod(), invocation.getArguments(), th);
+    }
 
-	private Callback<?>[] findCallbacks(Method method, Object[] args) {
-		List<Callback<?>> callbacks = new ArrayList<Callback<?>>();
+    private int fail(Method method, Object[] args, Throwable th) {
+        Callback<?>[] callbacks = findCallbacks(method, args);
 
-		Class<?>[] clazzes = method.getParameterTypes();
-		for (int i = 0; i < clazzes.length; i++) {
-			Class<?> clazz = clazzes[i];
+        return fail(callbacks, th);
+    }
 
-			if (!Callback.class.isAssignableFrom(clazz))
-				continue;
+    private Callback<?>[] findCallbacks(Method method, Object[] args) {
+        List<Callback<?>> callbacks = new ArrayList<Callback<?>>();
 
-			Callback<?> callback = (Callback<?>) args[i];
-			if (callback == null)
-				continue;
+        Class<?>[] clazzes = method.getParameterTypes();
+        for (int i = 0; i < clazzes.length; i++) {
+            Class<?> clazz = clazzes[i];
 
-			callbacks.add((Callback<?>) args[i]);
-		}
+            if (!Callback.class.isAssignableFrom(clazz)) continue;
 
-		return callbacks.toArray(new Callback[callbacks.size()]);
-	}
+            Callback<?> callback = (Callback<?>) args[i];
+            if (callback == null) continue;
 
-	private int fail(Callback<?>[] callbacks, Throwable th) {
-		int i = 0;
-		for (Callback<?> callback : callbacks)
-			i += fail(callback, th);
+            callbacks.add((Callback<?>) args[i]);
+        }
 
-		return i;
-	}
+        return callbacks.toArray(new Callback[callbacks.size()]);
+    }
 
-	private int fail(Callback<?> callback, Throwable th) {
-		if (callback == null)
-			return 0;
+    private int fail(Callback<?>[] callbacks, Throwable th) {
+        int i = 0;
+        for (Callback<?> callback : callbacks)
+            i += fail(callback, th);
 
-		try {
-			callback.onFail(th);
-		} catch (Throwable thro) {
-			thro.printStackTrace();
-		}
+        return i;
+    }
 
-		return 1;
-	}
+    private int fail(Callback<?> callback, Throwable th) {
+        if (callback == null) return 0;
+
+        try {
+            callback.onFail(th);
+        }
+        catch (Throwable thro) {
+            thro.printStackTrace();
+        }
+
+        return 1;
+    }
 
 }

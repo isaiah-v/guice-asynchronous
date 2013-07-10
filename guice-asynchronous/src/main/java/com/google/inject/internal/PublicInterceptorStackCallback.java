@@ -29,88 +29,82 @@ import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * Intercepts a method with a stack of interceptors.
- *
+ * 
  * @author crazybob@google.com (Bob Lee)
  */
 public final class PublicInterceptorStackCallback implements net.sf.cglib.proxy.MethodInterceptor {
-  private static final Set<String> AOP_INTERNAL_CLASSES = new HashSet<String>(Arrays.asList(
-      PublicInterceptorStackCallback.class.getName(),
-      InterceptedMethodInvocation.class.getName(),
-      MethodProxy.class.getName()));
 
-  final MethodInterceptor[] interceptors;
-  final Method method;
+    private static final Set<String> AOP_INTERNAL_CLASSES = new HashSet<String>(Arrays.asList(PublicInterceptorStackCallback.class.getName(), InterceptedMethodInvocation.class.getName(), MethodProxy.class.getName()));
 
-  public PublicInterceptorStackCallback(Method method, List<MethodInterceptor> interceptors) {
-    this.method = method;
-    this.interceptors = interceptors.toArray(new MethodInterceptor[interceptors.size()]);
-  }
+    final MethodInterceptor[] interceptors;
+    final Method method;
 
-  public Object intercept(Object proxy, Method method, Object[] arguments,
-      MethodProxy methodProxy) throws Throwable {
-    return new InterceptedMethodInvocation(proxy, methodProxy, arguments).proceed();
-  }
-
-  private class InterceptedMethodInvocation implements MethodInvocation {
-
-    final Object proxy;
-    final Object[] arguments;
-    final MethodProxy methodProxy;
-    int index = -1;
-
-    public InterceptedMethodInvocation(Object proxy, MethodProxy methodProxy,
-        Object[] arguments) {
-      this.proxy = proxy;
-      this.methodProxy = methodProxy;
-      this.arguments = arguments;
+    public PublicInterceptorStackCallback(Method method, List<MethodInterceptor> interceptors) {
+        this.method = method;
+        this.interceptors = interceptors.toArray(new MethodInterceptor[interceptors.size()]);
     }
 
-    public Object proceed() throws Throwable {
-      try {
-        index++;
-        return index == interceptors.length
-            ? methodProxy.invokeSuper(proxy, arguments)
-            : interceptors[index].invoke(this);
-      } catch (Throwable t) {
-        pruneStacktrace(t);
-        throw t;
-      } finally {
-        index--;
-      }
+    public Object intercept(Object proxy, Method method, Object[] arguments, MethodProxy methodProxy) throws Throwable {
+        return new InterceptedMethodInvocation(proxy, methodProxy, arguments).proceed();
     }
 
-    public Method getMethod() {
-      return method;
-    }
+    private class InterceptedMethodInvocation implements MethodInvocation {
 
-    public Object[] getArguments() {
-      return arguments;
-    }
+        final Object proxy;
+        final Object[] arguments;
+        final MethodProxy methodProxy;
+        int index = -1;
 
-    public Object getThis() {
-      return proxy;
-    }
-
-    public AccessibleObject getStaticPart() {
-      return getMethod();
-    }
-  }
-
-  /**
-   * Removes stacktrace elements related to AOP internal mechanics from the
-   * throwable's stack trace and any causes it may have.
-   */
-  private void pruneStacktrace(Throwable throwable) {
-    for(Throwable t = throwable; t != null; t = t.getCause()) {
-      StackTraceElement[] stackTrace = t.getStackTrace();
-      List<StackTraceElement> pruned = new ArrayList<StackTraceElement>();
-      for (StackTraceElement element : stackTrace) {
-        String className = element.getClassName();
-        if (!AOP_INTERNAL_CLASSES.contains(className) && !className.contains("$EnhancerByGuice$")) {
-          pruned.add(element);
+        public InterceptedMethodInvocation(Object proxy, MethodProxy methodProxy, Object[] arguments) {
+            this.proxy = proxy;
+            this.methodProxy = methodProxy;
+            this.arguments = arguments;
         }
-      }
-      t.setStackTrace(pruned.toArray(new StackTraceElement[pruned.size()]));
+
+        public Object proceed() throws Throwable {
+            try {
+                index++;
+                return index == interceptors.length ? methodProxy.invokeSuper(proxy, arguments) : interceptors[index].invoke(this);
+            } catch (Throwable t) {
+                pruneStacktrace(t);
+                throw t;
+            } finally {
+                index--;
+            }
+        }
+
+        public Method getMethod() {
+            return method;
+        }
+
+        public Object[] getArguments() {
+            return arguments;
+        }
+
+        public Object getThis() {
+            return proxy;
+        }
+
+        public AccessibleObject getStaticPart() {
+            return getMethod();
+        }
     }
-  }
+
+    /**
+     * Removes stacktrace elements related to AOP internal mechanics from the
+     * throwable's stack trace and any causes it may have.
+     */
+    private void pruneStacktrace(Throwable throwable) {
+        for (Throwable t = throwable; t != null; t = t.getCause()) {
+            StackTraceElement[] stackTrace = t.getStackTrace();
+            List<StackTraceElement> pruned = new ArrayList<StackTraceElement>();
+            for (StackTraceElement element : stackTrace) {
+                String className = element.getClassName();
+                if (!AOP_INTERNAL_CLASSES.contains(className) && !className.contains("$EnhancerByGuice$")) {
+                    pruned.add(element);
+                }
+            }
+            t.setStackTrace(pruned.toArray(new StackTraceElement[pruned.size()]));
+        }
+    }
 }

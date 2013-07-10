@@ -35,69 +35,174 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
+import com.google.inject.name.Named;
 import com.google.inject.spi.Elements;
 
 import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
+/**
+ * Guice-Asynchronous<br>
+ * <br>
+ * Enables asynchronous method calls while supporting guice's existing AOP
+ * behavior. This allows for other frameworks that utilize the AOP mechanism to
+ * size-by-side with guice-asynchronous.
+ * 
+ * @author Isaiah van der Elst
+ */
 public class Asynchronizer {
-	private static final String NAME_PACKAGE = "iv.guice-asynchronous";
 
-	public static final String NAME_EXECUTOR_SERVICE = NAME_PACKAGE
-			+ "/executorService";
-	public static final String NAME_SHUTDOWNABLE = NAME_PACKAGE
-			+ "/shutdownable";
+    /** The prefix for all names */
+    private static final String NAME_PREFIX = "iv.guice.asynchronous";
 
-	public static final Key<ExecutorService> KEY_EXECUTOR_SERVICE = Key.get(
-			ExecutorService.class, Names.named(NAME_EXECUTOR_SERVICE));
-	public static final Key<AsynchronousContext> KEY_ASYNCHRONOUS_CONTEXT = Key
-			.get(AsynchronousContext.class);
-	public static final Key<Shutdownable> KEY_SHUTDOWNABLE = Key.get(
-			Shutdownable.class, Names.named(NAME_SHUTDOWNABLE));
+    /**
+     * The {@link Named} value used to bind the {@link Shutdownable} for the
+     * asynchronous service<br>
+     * <br>
+     * <b>Example Injection:</b> <code>
+     * <br>@Inject
+     * <br>@Named(NAME_SHUTDOWNABLE)
+     * <br>Shutdownable shutdownable;
+     */
+    public static final String NAME_SHUTDOWNABLE = NAME_PREFIX + "/shutdownable";
 
-	private Asynchronizer() {
-	}
+    /**
+     * The {@link Named} value used to bind the {@link AsynchronousContext} for
+     * the asynchronous servicer.<br>
+     * <br>
+     * <b>Example Injection:</b> <code>
+     * <br>@Inject
+     * <br>@Named(NAME_ASYNCHRONOUS_CONTEXT)
+     * <br>AsynchronousContext context;
+     * </code>
+     */
+    public static final String NAME_ASYNCHRONOUS_CONTEXT = NAME_PREFIX + "/asynchronousContext";
 
-	public static final Injector createInjector(Module... modules) {
-		return Guice.createInjector(asynchronize(modules));
-	}
+    /**
+     * The {@link Key} used to bing the {@link AsynchronousContext}. Use
+     * {@link Injector#getBinding(Key)} to poll the instance variable from the
+     * injector.
+     */
+    public static final Key<AsynchronousContext> KEY_ASYNCHRONOUS_CONTEXT = Key.get(AsynchronousContext.class, Names.named(NAME_ASYNCHRONOUS_CONTEXT));
 
-	public static final Module asynchronize(ExecutorService executor,
-			Module... modules) {
-		AsynchronousManager aManager = new AsynchronousManager(executor);
+    /**
+     * The {@link Key} used to bind the {@link Shutdownable}. Use
+     * {@link Injector#getBinding(Key)} to poll the instance variable from the
+     * injector.
+     */
+    public static final Key<Shutdownable> KEY_SHUTDOWNABLE = Key.get(Shutdownable.class, Names.named(NAME_SHUTDOWNABLE));
 
-		ElementsBean elements = ElementsBeanFactory.createElementsBean(modules);
+    /** Static Class */
+    private Asynchronizer() {
 
-		AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
-		for (AopClass<?> aopClass : aopClasses) {
-			Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager,
-					aopClass);
-			EnhancerElement<?> element = EnhancerElement.createEnhancerElement(
-					aopClass, e);
+    }
 
-			elements.getBindings().remove(aopClass.getKey());
-			elements.getOthers().add(element);
-		}
+    /**
+     * Creates a module with the asynchronous service enabled. The service is
+     * used to asynchronize methods that are marked with the
+     * {@link Asynchronous} annotation.
+     * 
+     * @param executor
+     *            The executor service used to process asynchronous tasks. This
+     *            operation assumes ownership over the executor service. The
+     *            service will take care of shutting down the executor.
+     * @param modules
+     *            The set of modules to asynchronize
+     * @return The asynchronized module. This module contains the elements from
+     *         the given bindings and the binds used by the service.
+     */
+    public static final Module asynchronize(ExecutorService executor, Module... modules) {
+        if (executor == null) executor = createDefaultExecutor();
+        AsynchronousManager aManager = new AsynchronousManager(executor);
 
-		elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT,
-				bindInstance(KEY_ASYNCHRONOUS_CONTEXT, aManager));
-		elements.getBindings().put(KEY_SHUTDOWNABLE,
-				bindInstance(KEY_SHUTDOWNABLE, aManager));
-		elements.getBindings().put(KEY_EXECUTOR_SERVICE,
-				bindInstance(KEY_EXECUTOR_SERVICE, executor));
+        ElementsBean elements = ElementsBeanFactory.createElementsBean(modules);
 
-		return Elements.getModule(elements.createElementCollection());
-	}
+        AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
+        for (AopClass<?> aopClass : aopClasses) {
+            Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, aopClass);
+            EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass, e);
 
-	public static final Module asynchronize(Module... modules) {
-		ThreadFactory threadFactory = new MyThreadFactory(NAME_PACKAGE + "-",
-				true);
-		return asynchronize(Executors.newCachedThreadPool(threadFactory),
-				modules);
-	}
+            elements.getBindings().remove(aopClass.getKey());
+            elements.getOthers().add(element);
+        }
 
-	public static final void shutdown(Injector injector)
-			throws InterruptedException {
-		Shutdownable shutdownable = injector.getInstance(KEY_SHUTDOWNABLE);
-		shutdownable.shutdown();
-	}
+        elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, bindInstance(KEY_ASYNCHRONOUS_CONTEXT, aManager));
+        elements.getBindings().put(KEY_SHUTDOWNABLE, bindInstance(KEY_SHUTDOWNABLE, aManager));
+
+        return Elements.getModule(elements.createElementCollection());
+    }
+
+    public static final Module asynchronize(Module... modules) {
+        return asynchronize(null, modules);
+    }
+
+    /**
+     * Polls the {@link AsynchronousContext} from the given {@link Injector}.
+     * 
+     * @see #KEY_ASYNCHRONOUS_CONTEXT
+     * @see #NAME_ASYNCHRONOUS_CONTEXT
+     * @param injector
+     *            The Injector
+     * @return The {@link AsynchronousContext} bound to the given
+     *         {@link Injector}.
+     */
+    public static AsynchronousContext getAsynchronousContext(Injector injector) {
+        return injector.getInstance(KEY_ASYNCHRONOUS_CONTEXT);
+    }
+
+    /**
+     * Polls the {@link Shutdownable} from the given {@link Injector}
+     * 
+     * @see #KEY_SHUTDOWNABLE
+     * @see #NAME_SHUTDOWNABLE
+     * @param injector
+     *            the injector
+     * @return The {@link Shutdownable} bound to the given {@link Injector}
+     */
+    public static Shutdownable getShutdownable(Injector injector) {
+        return injector.getInstance(KEY_SHUTDOWNABLE);
+    }
+
+    /**
+     * Creates an executor service when one is not passed into the
+     * {@link #asynchronize(ExecutorService, Module...)} method
+     * 
+     * @return The default executor service
+     */
+    private static ExecutorService createDefaultExecutor() {
+        ThreadFactory threadFactory = new MyThreadFactory(NAME_PREFIX + "-", true);
+        return Executors.newCachedThreadPool(threadFactory);
+    }
+
+    /**
+     * A convenience method that creates an {@link Injector}.<br>
+     * <br>
+     * Equivalent to:<br>
+     * <code>Guice.createInjector(asynchronize(modules))</code>
+     * 
+     * @see #asynchronize(Module[])
+     * @param modules
+     *            The set of modules to asynchronize
+     * @return The injector with the given modules asynchronized
+     */
+    public static Injector createInjector(Module... modules) {
+        return Guice.createInjector(asynchronize(modules));
+    }
+
+    /**
+     * A convenience method to shutdown the service.<br>
+     * <br>
+     * Equivalent to:<br>
+     * <code>getShutdownable(injector).shutdown()</code>
+     * 
+     * @see #getShutdownable(Injector)
+     * @see Shutdownable
+     * @param injector
+     *            the injector
+     * @throws InterruptedException
+     *             If waiting thread is interrupted while shutting down the
+     *             service
+     */
+    public static void shutdown(Injector injector) throws InterruptedException {
+        getShutdownable(injector).shutdown();
+    }
 }

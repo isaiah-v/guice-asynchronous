@@ -20,6 +20,12 @@ import java.lang.annotation.Target;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.ElementType;
 
+/**
+ * Marks a method as being asynchronous.
+ * 
+ * @see Asynchronizer
+ * @author Isaiah van der Elst
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Asynchronous {}
