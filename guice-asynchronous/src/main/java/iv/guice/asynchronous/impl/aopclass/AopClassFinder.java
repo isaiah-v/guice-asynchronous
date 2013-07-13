@@ -19,6 +19,7 @@ import iv.guice.asynchronous.Asynchronous;
 import iv.guice.asynchronous.impl.elements.ElementsBean;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -95,6 +96,9 @@ public class AopClassFinder {
 
     private static void validateAsynchronousSignature(Method method) {
         if (!void.class.equals(method.getReturnType())) {
+            throw new RuntimeException("Asynchronous methods must return void: " + method);
+        }
+        if(Modifier.isPrivate(method.getModifiers())) {
             throw new RuntimeException("Asynchronous methods must return void: " + method);
         }
     }

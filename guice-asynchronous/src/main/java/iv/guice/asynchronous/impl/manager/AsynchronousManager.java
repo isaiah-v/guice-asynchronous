@@ -88,7 +88,7 @@ public class AsynchronousManager implements AsynchronousContext, Shutdownable, E
         exceptionsThrown++;
     }
 
-    private final class Task implements Runnable {
+    public final class Task implements Runnable {
 
         private final Runnable task;
 

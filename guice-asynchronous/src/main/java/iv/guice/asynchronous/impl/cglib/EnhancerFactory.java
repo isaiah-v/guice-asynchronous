@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import com.google.inject.internal.PublicInterceptorStackCallback;
 
 import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.NamingPolicy;
@@ -44,11 +43,9 @@ import net.sf.cglib.proxy.NoOp;
 public class EnhancerFactory {
 
     private static final NamingPolicy ASYNCHRONOUS_NAMING_POLICY = new DefaultNamingPolicy() {
-
         @Override
         protected String getTag() {
-            // Guice's stacktrace pruner looks for this tag
-            return "ByGuice";
+            return "ByGuiceAsynchronous";
         }
     };
 
@@ -88,7 +85,7 @@ public class EnhancerFactory {
 
             List<org.aopalliance.intercept.MethodInterceptor> interceptors = method.getInterceptors();
 
-            MethodInterceptor mi = interceptors == null ? new DirectInterceptor() : new PublicInterceptorStackCallback(method.getMethod(), interceptors);
+            MethodInterceptor mi = interceptors == null ? new DirectInterceptor() : new InterceptorStackCallback(method.getMethod(), interceptors);
             if (method.isAsynchronous()) mi = new AsynchronusInterceptor(executor, exceptionListener, mi);
 
             boolean b1 = callbackList.add(mi);

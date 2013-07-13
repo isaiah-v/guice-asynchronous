@@ -13,31 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.helpers.asyncinterceptor;
+package iv.guice.asynchronous.helpers.exceptionable;
+
+import iv.guice.asynchronous.helpers.callbacks.Callback;
+import iv.guice.asynchronous.impl.cglib.StacktracePruner;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 /**
- * The {@link AsyncInterceptor} works in connection with the {@link Callback}
+ * The {@link ExceptionableInterceptor} works in connection with the {@link Callback}
  * interface.
  * 
  * @author isaiah
  * 
  */
-public class AsyncInterceptor implements MethodInterceptor {
-
-    private int thrownExceptions = 0;
+public class ExceptionableInterceptor implements MethodInterceptor {
 
     private FailFastHandler failFast = new FailFastHandler();
-    private FailExceptionHandler failExceptions = new FailExceptionHandler();
+    private ExceptionableHandler failExceptions = new ExceptionableHandler();
 
     public Object invoke(MethodInvocation invocation) throws Throwable {
         try {
-            failFast.handle(thrownExceptions, invocation);
+            failFast.handle(failExceptions.getThrownExceptions(), invocation);
             return invocation.proceed();
         } catch (final Throwable th) {
-            thrownExceptions++;
+            StacktracePruner.pruneStacktrace(th);
 
             if (failExceptions.handle(th, invocation) > 0)
                 return null;

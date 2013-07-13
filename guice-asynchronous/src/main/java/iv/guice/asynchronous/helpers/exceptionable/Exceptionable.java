@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.helpers.asyncinterceptor;
+package iv.guice.asynchronous.helpers.exceptionable;
+
+import iv.guice.asynchronous.helpers.callbacks.Callback;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -22,4 +24,15 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface FailException {}
+public @interface Exceptionable {
+
+    /**
+     * If <code>true</code> and a {@link Callback} is present within the
+     * method's parameters, the exception (or {@link Throwable}) will be
+     * intercepted and passed to the callbacks.
+     * 
+     * @return <code>true</code> if exceptions should be intercepted and passed
+     *         to the callback
+     */
+    public boolean isCallback() default true;
+}

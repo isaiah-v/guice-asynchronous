@@ -13,19 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.helpers.asyncinterceptor;
+package iv.guice.asynchronous.helpers.callbacks;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.concurrent.RejectedExecutionException;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface FailFast {
-
-    public Class<? extends Throwable> exception() default RejectedExecutionException.class;
-
-    public String message() default "Fail Fast";
+/**
+ * A generic asynchronous callback.
+ * 
+ * @author Isaiah van der Elst
+ * @param <T>
+ *      The return type
+ */
+public interface Callback<T> {
+    
+    /**
+     * Called on the successful completion of an asynchronous operation
+     * @param result
+     *      the result of the asynchronous operation
+     */
+    public void onSuccess(T result);
+    
+    /**
+     * Called on the event that an asynchronous operation fails
+     * @param th
+     *      The cause of the failed operation
+     */
+    public void onFail(Throwable th);
 }

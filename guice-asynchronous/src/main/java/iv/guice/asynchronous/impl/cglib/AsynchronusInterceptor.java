@@ -36,20 +36,37 @@ class AsynchronusInterceptor implements MethodInterceptor {
     }
 
     public Object intercept(final Object obj, final Method method, final Object[] args, final MethodProxy proxy) throws Throwable {
-        executor.execute(new Runnable() {
-
-            public void run() {
-                try {
-                    // the wrapped method intercepter should invoke the method
-                    methodInterceptor.intercept(obj, method, args, proxy);
-                } catch (Throwable th) {
-                    th.printStackTrace();
-                    exceptionListener.onException(method, th);
-                }
-            }
-        });
+        executor.execute(new TaskExecutor(obj, method, args, proxy));
 
         // all asynchronous methods return void
         return null;
+    }
+    
+    class TaskExecutor implements Runnable {
+        
+        final Object obj;
+        final Method method;
+        final Object[] args;
+        final MethodProxy proxy;
+
+        public TaskExecutor(Object obj, Method method, Object[] args, MethodProxy proxy) {
+            super();
+            this.obj = obj;
+            this.method = method;
+            this.args = args;
+            this.proxy = proxy;
+        }
+        
+        public void run() {
+            try {
+                // the wrapped method intercepter should invoke the method
+                methodInterceptor.intercept(obj, method, args, proxy);
+            } catch (Throwable th) {
+                StacktracePruner.pruneStacktrace(th);
+                
+                th.printStackTrace();
+                exceptionListener.onException(method, th);
+            }
+        }
     }
 }

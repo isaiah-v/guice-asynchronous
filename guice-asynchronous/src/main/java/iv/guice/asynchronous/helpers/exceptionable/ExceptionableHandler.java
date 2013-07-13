@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.helpers.asyncinterceptor;
+package iv.guice.asynchronous.helpers.exceptionable;
+
+import iv.guice.asynchronous.helpers.callbacks.Callback;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,12 +23,24 @@ import java.util.List;
 
 import org.aopalliance.intercept.MethodInvocation;
 
-class FailExceptionHandler {
+class ExceptionableHandler {
+
+    private volatile int thrownExceptions = 0;
 
     Integer handle(Throwable th, MethodInvocation invocation) throws Throwable {
-        if (!invocation.getStaticPart().isAnnotationPresent(FailException.class)) return 0;
+        Exceptionable exceptionable = invocation.getStaticPart().getAnnotation(Exceptionable.class);
+        if (exceptionable == null) return 0;
 
-        return fail(invocation.getMethod(), invocation.getArguments(), th);
+        thrownExceptions++;
+
+        if (exceptionable.isCallback())
+            return fail(invocation.getMethod(), invocation.getArguments(), th);
+        else
+            return 0;
+    }
+
+    int getThrownExceptions() {
+        return thrownExceptions;
     }
 
     private int fail(Method method, Object[] args, Throwable th) {

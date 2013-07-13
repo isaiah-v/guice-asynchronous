@@ -37,14 +37,14 @@ public class ElementsBeanFactory {
     }
 
     public static ElementsBean createElementsBean(Collection<Element> elements) {
-        ElementsSpliceVisitor visitor = new ElementsSpliceVisitor();
+        ElementsBeanVisitor visitor = new ElementsBeanVisitor();
         for (Element e : elements) {
             e.acceptVisitor(visitor);
         }
         return visitor.asElementsBean();
     }
 
-    private static class ElementsSpliceVisitor extends DefaultElementVisitor<Void> {
+    private static class ElementsBeanVisitor extends DefaultElementVisitor<Void> {
 
         private Collection<InterceptorBinding> interceptors = new ArrayList<InterceptorBinding>();
         private Collection<Element> others = new ArrayList<Element>();

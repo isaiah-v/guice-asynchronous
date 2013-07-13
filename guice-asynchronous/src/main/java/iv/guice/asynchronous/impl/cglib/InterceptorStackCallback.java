@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.inject.internal;
+package iv.guice.asynchronous.impl.cglib;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import net.sf.cglib.proxy.MethodProxy;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -32,14 +28,12 @@ import org.aopalliance.intercept.MethodInvocation;
  * 
  * @author crazybob@google.com (Bob Lee)
  */
-public final class PublicInterceptorStackCallback implements net.sf.cglib.proxy.MethodInterceptor {
-
-    private static final Set<String> AOP_INTERNAL_CLASSES = new HashSet<String>(Arrays.asList(PublicInterceptorStackCallback.class.getName(), InterceptedMethodInvocation.class.getName(), MethodProxy.class.getName()));
+public final class InterceptorStackCallback implements net.sf.cglib.proxy.MethodInterceptor {
 
     final MethodInterceptor[] interceptors;
     final Method method;
 
-    public PublicInterceptorStackCallback(Method method, List<MethodInterceptor> interceptors) {
+    public InterceptorStackCallback(Method method, List<MethodInterceptor> interceptors) {
         this.method = method;
         this.interceptors = interceptors.toArray(new MethodInterceptor[interceptors.size()]);
     }
@@ -48,7 +42,7 @@ public final class PublicInterceptorStackCallback implements net.sf.cglib.proxy.
         return new InterceptedMethodInvocation(proxy, methodProxy, arguments).proceed();
     }
 
-    private class InterceptedMethodInvocation implements MethodInvocation {
+    class InterceptedMethodInvocation implements MethodInvocation {
 
         final Object proxy;
         final Object[] arguments;
@@ -65,9 +59,6 @@ public final class PublicInterceptorStackCallback implements net.sf.cglib.proxy.
             try {
                 index++;
                 return index == interceptors.length ? methodProxy.invokeSuper(proxy, arguments) : interceptors[index].invoke(this);
-            } catch (Throwable t) {
-                pruneStacktrace(t);
-                throw t;
             } finally {
                 index--;
             }
@@ -87,24 +78,6 @@ public final class PublicInterceptorStackCallback implements net.sf.cglib.proxy.
 
         public AccessibleObject getStaticPart() {
             return getMethod();
-        }
-    }
-
-    /**
-     * Removes stacktrace elements related to AOP internal mechanics from the
-     * throwable's stack trace and any causes it may have.
-     */
-    private void pruneStacktrace(Throwable throwable) {
-        for (Throwable t = throwable; t != null; t = t.getCause()) {
-            StackTraceElement[] stackTrace = t.getStackTrace();
-            List<StackTraceElement> pruned = new ArrayList<StackTraceElement>();
-            for (StackTraceElement element : stackTrace) {
-                String className = element.getClassName();
-                if (!AOP_INTERNAL_CLASSES.contains(className) && !className.contains("$EnhancerByGuice$")) {
-                    pruned.add(element);
-                }
-            }
-            t.setStackTrace(pruned.toArray(new StackTraceElement[pruned.size()]));
         }
     }
 }
