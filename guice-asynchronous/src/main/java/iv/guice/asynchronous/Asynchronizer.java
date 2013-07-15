@@ -131,6 +131,16 @@ public class Asynchronizer {
         return Elements.getModule(elements.createElementCollection());
     }
 
+    /**
+     * Creates a module with the asynchronous service enabled. The service is
+     * used to asynchronize methods that are marked with the
+     * {@link Asynchronous} annotation.
+     * 
+     * @param modules
+     *            The set of modules to asynchronize
+     * @return The asynchronized module. This module contains the elements from
+     *         the given bindings and the binds used by the service.
+     */
     public static final Module asynchronize(Module... modules) {
         return asynchronize(null, modules);
     }

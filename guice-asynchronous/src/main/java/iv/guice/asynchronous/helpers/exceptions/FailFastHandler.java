@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.helpers.exceptionable;
+package iv.guice.asynchronous.helpers.exceptions;
 
 import java.lang.reflect.Constructor;
 
-import org.aopalliance.intercept.MethodInvocation;
-
 class FailFastHandler {
 
-    void handle(Integer thrownExceptions, MethodInvocation invocation) throws Throwable {
-        FailFast failFast = invocation.getStaticPart().getAnnotation(FailFast.class);
-        if (failFast == null) return;
-
-        if (thrownExceptions > 0) throw createException(failFast.exception(), failFast.message());
+    public static void failFast(Class<? extends Throwable> type, String message) throws Throwable {
+        throw createException(type, message);
     }
 
-    private Throwable createException(Class<? extends Throwable> clazz, String msg) throws Throwable {
+    private static Throwable createException(Class<? extends Throwable> clazz, String msg) throws Throwable {
         Constructor<? extends Throwable> c = clazz.getConstructor(String.class);
         return c.newInstance(msg);
     }
