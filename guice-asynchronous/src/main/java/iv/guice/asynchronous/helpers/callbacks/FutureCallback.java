@@ -21,10 +21,20 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import iv.guice.asynchronous.helpers.exceptions.CallbackExceptions;
+
 /**
  * A {@link Future} and {@link Callback} implementation. This mechanism allows
  * us to pass a callback to an asynchronous task and poll result using a future
  * object.<br>
+ * <br>
+ * Because other thread are likely to block on a result, it's important that the
+ * {@link #onSuccess(Object)} or {@link #onFail(Throwable)} methods are always
+ * called. The asynchronous task should use the {@link CallbackExceptions}
+ * mechanism, or it should surround the task in a try-catch and any thrown
+ * {@link Throwable}s should be forwarded to the {@link #onFail(Throwable)}
+ * method. This will ensure that a result is always defined and any waiting
+ * threads will unblocked.<br>
  * <br>
  * <b>Note:</b> {@link Future}s can be prone to a type of deadlock where all of
  * the available threads resources block on tasks that are still queued. It's

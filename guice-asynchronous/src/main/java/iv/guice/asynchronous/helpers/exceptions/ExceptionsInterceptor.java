@@ -22,15 +22,18 @@ import iv.guice.asynchronous.impl.cglib.StacktracePruner;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
+import iv.guice.asynchronous.helpers.callbacks.Callback;
+
 /**
- * <b>NOTE:</b> The {@link CallbackExceptionInterceptor} dose conflict with the
- * {@link ExceptionsInterceptor}. In situations where the fail fast intercepter is
- * further up the stack, fail fast exceptions thrown will not be caught by the
- * callback exception interceptor. To support both behaviors, the fail fast
- * interceptor can also be used to forward exceptions to callbacks.
+ * A helper intercepter intended to aid in exception handling and processing for
+ * asynchronous tasks. Currently it supports two mechanisms:<br/>
+ * <br/>
+ * 1) {@link CallbackExceptions}: forwards uncaught exceptions to
+ * {@link Callback}s<br/>
+ * 2) {@link FailFast}: helps operations fail-fast when an asynchronous task
+ * throws an exception<br/>
  * 
  * @author Isaiah van der Elst
- * 
  */
 public class ExceptionsInterceptor implements MethodInterceptor {
 
@@ -41,55 +44,53 @@ public class ExceptionsInterceptor implements MethodInterceptor {
         FailFast failfast = getFailFast(inv);
 
         try {
-            if(isFailFast(failfast) && thrownExceptions > 0)
-                FailFastHandler.failFast(getFailFastType(failfast), getMessage(failfast));
+            if (isFailFast(failfast) && thrownExceptions > 0) FailFastHandler.failFast(getFailFastType(failfast), getMessage(failfast));
 
             return inv.proceed();
         }
         catch (final Throwable th) {
             StacktracePruner.pruneStacktrace(th);
-            
+
             incrementExceptions(failfast);
-            if(isCallback(inv, failfast))
-                callback(th, inv.getMethod(), inv.getArguments());
+            if (isCallback(inv, failfast)) callback(th, inv.getMethod(), inv.getArguments());
 
             throw th;
         }
     }
-    
+
     private void callback(Throwable th, Method method, Object... args) throws Throwable {
         CallbackExceptionsHandler.callbackException(th, method, args);
     }
-    
+
     private void incrementExceptions(FailFast failfast) {
-        if(failfast!=null) thrownExceptions++;
+        if (failfast != null) thrownExceptions++;
     }
-    
+
     private FailFast getFailFast(MethodInvocation inv) {
         return inv.getStaticPart().getAnnotation(FailFast.class);
     }
-    
+
     private boolean isFailFast(FailFast failFast) {
-        return failFast==null ? false : failFast.isFailFast();
+        return failFast == null ? false : failFast.isFailFast();
     }
-    
+
     private boolean isCallback(MethodInvocation inv, FailFast failfast) {
         return isCallback(inv) || isCallback(failfast);
     }
-    
+
     private boolean isCallback(FailFast failFast) {
-        return failFast==null ? false : failFast.isCallback();
+        return failFast == null ? false : failFast.isCallback();
     }
-    
+
     private boolean isCallback(MethodInvocation inv) {
         return inv.getStaticPart().isAnnotationPresent(CallbackExceptions.class);
     }
-    
+
     private Class<? extends Throwable> getFailFastType(FailFast failFast) {
-        return failFast==null ? null : failFast.type();
+        return failFast == null ? null : failFast.type();
     }
-    
+
     private String getMessage(FailFast failFast) {
-        return failFast==null ? null : failFast.message();
+        return failFast == null ? null : failFast.message();
     }
 }

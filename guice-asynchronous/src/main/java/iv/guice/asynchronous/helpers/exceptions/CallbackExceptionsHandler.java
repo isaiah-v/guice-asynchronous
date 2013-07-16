@@ -21,11 +21,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Marks a method such that when it fails, 
- * 
- * @author isaiah
- */
 class CallbackExceptionsHandler {
 
     private CallbackExceptionsHandler() {}

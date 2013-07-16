@@ -25,8 +25,20 @@ import iv.guice.asynchronous.helpers.callbacks.Callback;
 
 /**
  * Marks a method as part of the fail-fast mechanism. This can be a method that
- * fail's fast. This may also be a method, that when it fails, triggers the
- * fail-fast mechanism. 
+ * needs to fail fast or just a method that triggers the fail-fast mechanism.<br>
+ * <br>
+ * Frequently operations perform many asynchronous task, none of which are aware
+ * of the other tasks. However, the overall operation fails if any of the tasks
+ * fail. The idea behind having a fail-fast mechanism is to stop the execution
+ * of an operation as soon as something goes wrong rather than allowing tasks to
+ * continue executing and submitting further downstream tasks.<br>
+ * <br>
+ * The fail-fast mechanism is triggered when a method, that contains this
+ * annotation, throws an exception. After this occurs any attempt to call a
+ * method that fails fast results in a thrown exception itself and the task does
+ * not executed.<br>
+ * <br>
+ * This mechanism's logic is defined within the {@link ExceptionsInterceptor}
  * 
  * @author Isaiah van der Elst
  */
@@ -51,7 +63,8 @@ public @interface FailFast {
      * Enables/Disables the fail-fast mechanism on a method. If
      * <code>true</code> and a prior exception has been thrown from a method
      * with the {@link FailFast} annotation, the fail-fast exception will be
-     * thrown immediately upon being called and the operation will be skipped<br>
+     * thrown immediately upon being called and the method's execution will be
+     * skipped<br>
      * <br>
      * Setting this value to <code>false</code> will allow a method to trigger
      * the fail-fast mechanism without it ever failing fast itself.
@@ -62,23 +75,23 @@ public @interface FailFast {
     public boolean isFailFast() default true;
 
     /**
-     * Defines the {@link Throwable} type to thrown when an operation is skipped
-     * due to it failing fast. The class must have a single string constructor
-     * to sets the error message.
+     * Defines the {@link Throwable} to throw when a task is called and the
+     * fail-fast mechanism has been triggered. The class must have a single
+     * string constructor to sets the error message.
      * 
      * @return The {@link Throwable} type to thrown when an operation is skipped
      *         due to it failing fast. (Default:
      *         {@link RejectedExecutionException}.class)
-     * @see FailFast#failFastMessage();
+     * @see #message()
      */
     public Class<? extends Throwable> type() default RejectedExecutionException.class;
 
     /**
-     * Defines the error message given to the when an operation is skipped due
-     * to it failing fast.
+     * Defines the error message assigned to the {@link Throwable} when
      * 
      * @return The error message given to the when an operation is skipped due
-     *         to it failing fast (Default: "FAILFAST: Operation Skipped")
+     *         to it failing fast
+     * @see #type()
      */
     public String message() default "FAILFAST: Operation Skipped";
 }

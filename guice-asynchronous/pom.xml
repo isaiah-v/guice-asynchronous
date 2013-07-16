@@ -89,6 +89,7 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.9</version>
 				<configuration>
+					<excludePackageNames>com.google.*:iv.guice.asynchronous.impl.*</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>
@@ -201,5 +202,5 @@
 		</dependency>
 
 	</dependencies>
-	
+
 </project>
