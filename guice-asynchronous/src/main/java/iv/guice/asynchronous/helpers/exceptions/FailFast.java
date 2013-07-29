@@ -55,7 +55,7 @@ public @interface FailFast {
      * 
      * @return <code>true</code> if an attempt should be made to forward
      *         exceptions to any {@link Callback}s within the method's
-     *         parameters (Default: <code>true</code>)
+     *         parameters
      */
     public boolean isCallback() default true;
 
@@ -70,7 +70,7 @@ public @interface FailFast {
      * the fail-fast mechanism without it ever failing fast itself.
      * 
      * @return <code>true</code> if a method should fail-fast when a prior
-     *         exception has been thrown. (Default: <code>true</code>)
+     *         exception has been thrown.
      */
     public boolean isFailFast() default true;
 
