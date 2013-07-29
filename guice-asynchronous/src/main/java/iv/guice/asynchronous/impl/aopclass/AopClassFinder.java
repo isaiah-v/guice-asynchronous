@@ -42,6 +42,7 @@ public class AopClassFinder {
         Collection<AopClass<?>> value = new ArrayList<AopClass<?>>();
 
         BindingsTargetVisitor tv = new BindingsTargetVisitor(elements);
+        
         for (Binding<?> b : elements.getBindings().values()) {
             Key<?> key = b.acceptTargetVisitor(tv);
             if (key == null || !isAsyncClass(key)) continue;
@@ -50,7 +51,7 @@ public class AopClassFinder {
 
             AopMethod[] methods = getAopMethods(key, elements);
 
-            value.add(createAopClass(source, key, methods));
+            value.add(createAopClass(source, key, methods, b));
         }
 
         return value.isEmpty() ? null : value.toArray(new AopClass[value.size()]);
@@ -102,12 +103,13 @@ public class AopClassFinder {
             throw new RuntimeException("Asynchronous methods must return void: " + method);
         }
     }
-
-    private static <T> AopClass<T> createAopClass(Object source, Key<T> key, AopMethod[] methods) {
+    
+    private static <T> AopClass<T> createAopClass(Object source, Key<T> key, AopMethod[] methods, Binding<?> binding) {
         AopClass<T> aopClass = new AopClass<T>();
         aopClass.setSource(source);
         aopClass.setKey(key);
         aopClass.setMethods(methods);
+        aopClass.setBindingSource(binding);
 
         return aopClass;
     }
@@ -135,5 +137,4 @@ public class AopClassFinder {
             return key;
         }
     }
-
 }

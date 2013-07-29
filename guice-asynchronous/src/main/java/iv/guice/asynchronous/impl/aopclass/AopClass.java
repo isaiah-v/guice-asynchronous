@@ -17,6 +17,7 @@ package iv.guice.asynchronous.impl.aopclass;
 
 import java.util.Arrays;
 
+import com.google.inject.Binding;
 import com.google.inject.Key;
 
 public class AopClass<T> {
@@ -24,6 +25,17 @@ public class AopClass<T> {
     private Key<T> key;
     private Object source;
     private AopMethod[] methods;
+    
+    private Binding<?> bindingSource;
+    
+    public Binding<?> getBindingSource() {
+        return bindingSource;
+    }
+
+    
+    public void setBindingSource(Binding<?> bindingSource) {
+        this.bindingSource = bindingSource;
+    }
 
     public Key<T> getKey() {
         return key;
@@ -51,6 +63,6 @@ public class AopClass<T> {
 
     @Override
     public String toString() {
-        return "AopClass [key=" + key + ", source=" + source + ", methods=" + Arrays.toString(methods) + "]";
+        return "AopClass [key=" + key + ", source=" + source + ", methods=" + Arrays.toString(methods) + ", bindingSource=" + bindingSource + "]";
     }
 }

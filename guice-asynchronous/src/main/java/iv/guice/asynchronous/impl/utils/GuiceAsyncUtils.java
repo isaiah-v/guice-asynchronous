@@ -15,7 +15,10 @@
  */
 package iv.guice.asynchronous.impl.utils;
 
+import java.lang.annotation.Annotation;
+
 import com.google.inject.Key;
+import com.google.inject.ScopeAnnotation;
 import com.google.inject.TypeLiteralFactory;
 import com.google.inject.spi.InjectionRequest;
 import com.google.inject.spi.InstanceBinding;
@@ -34,5 +37,21 @@ public class GuiceAsyncUtils {
 
     public static <T> InstanceBinding<T> bindInstance(Key<T> key, T instance) {
         return new InstanceBindingImpl<T>(key, instance, getSource());
+    }
+
+    public static Annotation findScopeAnnotation(Annotation[] annotations) {
+        Annotation annotation = null;
+
+        for (Annotation a : annotations) {
+            if (a == null || !a.annotationType().isAnnotationPresent(ScopeAnnotation.class)) continue;
+            if (annotation != null) throw new IllegalStateException("multiple scope annotations");
+            annotation = a;
+        }
+
+        return annotation;
+    }
+    
+    public static <T> Class<? super T> getRawType(Key<T> key) {
+        return key.getTypeLiteral().getRawType();
     }
 }

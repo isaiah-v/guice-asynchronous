@@ -119,7 +119,7 @@ public class Asynchronizer {
         AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
         for (AopClass<?> aopClass : aopClasses) {
             Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, aopClass);
-            EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass, e);
+            EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass,e);
 
             elements.getBindings().remove(aopClass.getKey());
             elements.getOthers().add(element);

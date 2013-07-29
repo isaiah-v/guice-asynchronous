@@ -17,6 +17,7 @@ package iv.guice.asynchronous.impl.cglib;
 
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -24,10 +25,15 @@ import net.sf.cglib.proxy.Enhancer;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.PrivateBinder;
+import com.google.inject.Scope;
 import com.google.inject.TypeLiteral;
 import com.google.inject.TypeLiteralFactory;
+import com.google.inject.binder.ScopedBindingBuilder;
+import com.google.inject.spi.BindingScopingVisitor;
 import com.google.inject.spi.Element;
 import com.google.inject.spi.ElementVisitor;
+
+import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
 /**
  * Used to bind {@link #getKey()} to the classes produced by
@@ -40,38 +46,63 @@ import com.google.inject.spi.ElementVisitor;
  */
 public class EnhancerElement<T> implements Element {
 
-    private final Object source;
-    private final Key<T> key;
+    private final AopClass<T> aopClass;
     private final Enhancer enhancer;
 
-    public EnhancerElement(Object source, Key<T> key, Enhancer enhancer) {
-        this.source = source;
-        this.key = key;
+    public EnhancerElement(AopClass<T> aopClass, Enhancer enhancer) {
+        this.aopClass = aopClass;
         this.enhancer = enhancer;
     }
 
     public Object getSource() {
-        return source;
+        return aopClass.getSource();
     }
 
     public void applyTo(Binder binder) {
-        if (this.source != null) binder = binder.withSource(source);
-        final Key<T> key = this.getKey();
-
+        setWithSource(binder);
+        
+        // create the private binder
         PrivateBinder privateBinder = binder.newPrivateBinder();
 
-        privateBinder.bind(Enhancer.class).toInstance(enhancer);
+        // bind the Enhancer to the private binder
+        bindEnhancer(privateBinder);
+        
+        // bind the key to the Enhancer's provider to the provate binder
+        TypeLiteral<EnhancerProvider<T>> type = createEnhancerProviderType();
+        ScopedBindingBuilder sbb = bindEnhancerProvider(privateBinder, type);
+        
+        // bind the key's scope to the original scope
+        bindScope(binder, sbb);
 
+        // Expose the key 
+        privateBinder.expose(getKey());
+    }
+    
+    private TypeLiteral<EnhancerProvider<T>> createEnhancerProviderType() {
         Type mainType = EnhancerProvider.class;
-        Type genaricType = key.getTypeLiteral().getType();
-        TypeLiteral<EnhancerProvider<T>> enhancerProvider = TypeLiteralFactory.createParameterizedTypeLiteral(mainType, genaricType);
-        privateBinder.bind(key).toProvider(enhancerProvider);
-
-        privateBinder.expose(key);
+        Type genaricType = this.getKey().getTypeLiteral().getType();
+        return TypeLiteralFactory.createParameterizedTypeLiteral(mainType, genaricType);
+    }
+    
+    private void setWithSource(Binder binder) {
+        Object source = getSource();
+        if(source!=null) binder.withSource(source);
+    }
+    
+    private void bindEnhancer(Binder binder) {
+        binder.bind(Enhancer.class).toInstance(enhancer);
+    }
+    private ScopedBindingBuilder bindEnhancerProvider(Binder binder, TypeLiteral<EnhancerProvider<T>> type) {
+        return binder.bind(getKey()).toProvider(type);
+    }
+    
+    private void bindScope(Binder binder, ScopedBindingBuilder scopedBindingBuilder) {
+        ScopeBinderVisitor sbv = new ScopeBinderVisitor(scopedBindingBuilder);
+        aopClass.getBindingSource().acceptScopingVisitor(sbv);
     }
 
     public Key<T> getKey() {
-        return key;
+        return aopClass.getKey();
     }
 
     public Enhancer getEnhancer() {
@@ -82,11 +113,38 @@ public class EnhancerElement<T> implements Element {
         // not needed
         throw new UnsupportedOperationException();
     }
-
+    
     public static <T> EnhancerElement<T> createEnhancerElement(AopClass<T> aopClass, Enhancer enhancer) {
-        final Object source = aopClass.getSource();
-        final Key<T> key = aopClass.getKey();
+        return new EnhancerElement<T>(aopClass, enhancer);
+    }
+    
+    private class ScopeBinderVisitor implements BindingScopingVisitor<Void> {
 
-        return new EnhancerElement<T>(source, key, enhancer);
+        private final ScopedBindingBuilder scopedBindingBuilder;
+        
+        ScopeBinderVisitor(ScopedBindingBuilder scopedBindingBuilder) {
+            this.scopedBindingBuilder = scopedBindingBuilder;
+        }
+        
+        public Void visitEagerSingleton() {
+            scopedBindingBuilder.asEagerSingleton();
+            return null;
+        }
+
+        public Void visitScope(Scope scope) {
+            scopedBindingBuilder.in(scope);
+            return null;
+        }
+
+        public Void visitScopeAnnotation(Class<? extends Annotation> scopeAnnotation) {
+            scopedBindingBuilder.in(scopeAnnotation);
+            return null;
+        }
+
+        public Void visitNoScoping() {
+            Annotation a = findScopeAnnotation(getRawType(getKey()).getAnnotations());
+            if(a!=null) visitScopeAnnotation(a.annotationType());
+            return null;
+        }
     }
 }
