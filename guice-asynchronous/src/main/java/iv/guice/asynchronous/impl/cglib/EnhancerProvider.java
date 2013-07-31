@@ -38,10 +38,17 @@ class EnhancerProvider<T> implements Provider<T> {
     /** creates an instances of <code>T</code> */
     @Inject
     private Enhancer enhancer;
+    
+    @Inject(optional=true)
+    @SuppressWarnings("rawtypes")
+    private Class[] argumentTypes;
+    
+    @Inject(optional=true)
+    @SuppressWarnings("rawtypes")
+    private Provider[] providers;
 
-    @SuppressWarnings("unchecked")
     public T get() {
-        return injectMembers((T) enhancer.create());
+        return injectMembers((T) getInstance());
     }
 
     /**
@@ -54,5 +61,22 @@ class EnhancerProvider<T> implements Provider<T> {
     private T injectMembers(T t) {
         membersInjector.injectMembers(t);
         return t;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private T getInstance() {
+        if(argumentTypes==null || providers==null)
+            return (T) enhancer.create();
+        assert argumentTypes.length==providers.length;
+        
+        return (T) enhancer.create(argumentTypes, createArgumentArray()); 
+    }
+    
+    private Object[] createArgumentArray() {
+        Object[] arguments = new Object[providers.length];
+        for(int i=0; i<arguments.length; i++) {
+            arguments[i]=providers[i].get();
+        }
+        return arguments;
     }
 }

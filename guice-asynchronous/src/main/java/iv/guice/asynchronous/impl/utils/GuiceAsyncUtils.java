@@ -16,7 +16,10 @@
 package iv.guice.asynchronous.impl.utils;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 
+import com.google.inject.BindingAnnotation;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ScopeAnnotation;
 import com.google.inject.TypeLiteralFactory;
@@ -51,7 +54,31 @@ public class GuiceAsyncUtils {
         return annotation;
     }
     
+    public static Annotation findBindingAnnotation(Annotation[] annotations) {
+        Annotation annotation = null;
+
+        for (Annotation a : annotations) {
+            if (a == null || !a.annotationType().isAnnotationPresent(BindingAnnotation.class)) continue;
+            if (annotation != null) throw new IllegalStateException("multiple scope annotations");
+            annotation = a;
+        }
+
+        return annotation;
+    }
+    
     public static <T> Class<? super T> getRawType(Key<T> key) {
         return key.getTypeLiteral().getRawType();
+    }
+    
+    public static Constructor<?> findInjectConstructor(Class<?> clazz) {
+        Constructor<?> constructor = null;
+        for(Constructor<?> c : clazz.getConstructors()) {
+            if(c.getAnnotation(Inject.class)==null) continue;
+            if(constructor!=null)
+                throw new IllegalStateException("mutiple constructor");
+            
+            constructor = c;
+        }
+        return constructor;
     }
 }

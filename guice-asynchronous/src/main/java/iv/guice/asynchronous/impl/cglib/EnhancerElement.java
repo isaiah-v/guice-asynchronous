@@ -18,6 +18,7 @@ package iv.guice.asynchronous.impl.cglib;
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -25,6 +26,7 @@ import net.sf.cglib.proxy.Enhancer;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.PrivateBinder;
+import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.TypeLiteral;
 import com.google.inject.TypeLiteralFactory;
@@ -67,13 +69,15 @@ public class EnhancerElement<T> implements Element {
         // bind the Enhancer to the private binder
         bindEnhancer(privateBinder);
         
+        bindObjectFactory(privateBinder);
+        
         // bind the key to the Enhancer's provider to the provate binder
         TypeLiteral<EnhancerProvider<T>> type = createEnhancerProviderType();
         ScopedBindingBuilder sbb = bindEnhancerProvider(privateBinder, type);
         
         // bind the key's scope to the original scope
         bindScope(binder, sbb);
-
+        
         // Expose the key 
         privateBinder.expose(getKey());
     }
@@ -116,6 +120,32 @@ public class EnhancerElement<T> implements Element {
     
     public static <T> EnhancerElement<T> createEnhancerElement(AopClass<T> aopClass, Enhancer enhancer) {
         return new EnhancerElement<T>(aopClass, enhancer);
+    }
+    
+    public void bindObjectFactory(Binder binder) {
+        Constructor<?> c = findInjectConstructor(getRawType(getKey()));
+        if(c==null) return;
+        
+        Class<?>[] argumentTypes = c.getParameterTypes();
+        
+        Provider<?>[] provider = new Provider[argumentTypes.length];
+        for(int i=0; i<provider.length; i++) {
+            Class<?> clazz = argumentTypes[i];
+            
+            Provider<?> p = binder.getProvider(getKey(clazz, c.getParameterAnnotations()[i]));
+            provider[i] = p;
+        }
+        
+        binder.bind(Class[].class).toInstance(argumentTypes);
+        binder.bind(Provider[].class).toInstance(provider);
+    }
+    
+    private <T2> Key<T2> getKey(Class<T2> clazz, Annotation[] annotations) {
+        Annotation a = findBindingAnnotation(annotations);
+        if(a!=null)
+            return Key.get(clazz, a);
+        else
+            return Key.get(clazz);
     }
     
     private class ScopeBinderVisitor implements BindingScopingVisitor<Void> {
