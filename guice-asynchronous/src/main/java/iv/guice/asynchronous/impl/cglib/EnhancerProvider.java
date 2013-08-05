@@ -15,6 +15,7 @@
  */
 package iv.guice.asynchronous.impl.cglib;
 
+import iv.guice.asynchronous.impl.utils.AssistedProvider;
 import net.sf.cglib.proxy.Enhancer;
 
 import com.google.inject.Inject;
@@ -29,7 +30,7 @@ import com.google.inject.Provider;
  * @param <T>
  *            The provider type
  */
-class EnhancerProvider<T> implements Provider<T> {
+class EnhancerProvider<T> implements AssistedProvider<T> {
 
     /** injects the members into the instance variable */
     @Inject
@@ -39,16 +40,20 @@ class EnhancerProvider<T> implements Provider<T> {
     @Inject
     private Enhancer enhancer;
     
-    @Inject(optional=true)
+    @Inject
     @SuppressWarnings("rawtypes")
     private Class[] argumentTypes;
     
-    @Inject(optional=true)
+    @Inject
     @SuppressWarnings("rawtypes")
     private Provider[] providers;
 
     public T get() {
-        return injectMembers((T) getInstance());
+        return injectMembers(createInstance());
+    }
+    
+    public T get(Object[] arguments) {
+        return injectMembers(createInstance(arguments));
     }
 
     /**
@@ -63,20 +68,34 @@ class EnhancerProvider<T> implements Provider<T> {
         return t;
     }
     
-    @SuppressWarnings("unchecked")
-    private T getInstance() {
-        if(argumentTypes==null || providers==null)
-            return (T) enhancer.create();
-        assert argumentTypes.length==providers.length;
-        
-        return (T) enhancer.create(argumentTypes, createArgumentArray()); 
+    private T createInstance() {
+        return createInstance(getArgumentInstances()); 
     }
     
-    private Object[] createArgumentArray() {
-        Object[] arguments = new Object[providers.length];
-        for(int i=0; i<arguments.length; i++) {
-            arguments[i]=providers[i].get();
-        }
+    @SuppressWarnings("unchecked")
+    private T createInstance(Object[] arguments) {
+        return (T) enhancer.create(argumentTypes, arguments);
+    }
+
+    public int getArgumentCount() {
+        return argumentTypes.length;
+    }
+
+    public Object getArgumentInstance(int index) {
+        return providers[index].get();
+    }
+
+    public Class<?>[] getArgumentTypes() {
+        return argumentTypes;
+    }
+
+    public Object[] getArgumentInstances() {
+        final int count = getArgumentCount();
+        
+        Object[] arguments = new Object[count];
+        for(int i=0; i<count; i++) 
+            arguments[i] = getArgumentInstance(i);
+        
         return arguments;
     }
 }

@@ -41,7 +41,7 @@ import com.google.inject.spi.Elements;
 import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
 /**
- * Guice-Asynchronous<br>
+ * GuiceAsynchronous<br>
  * <br>
  * Enables asynchronous method calls while supporting guice's existing AOP
  * behavior. This allows for other frameworks that utilize the AOP mechanism to
@@ -49,7 +49,7 @@ import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
  * 
  * @author Isaiah van der Elst
  */
-public class Asynchronizer {
+public class GuiceAsynchronous {
 
     /** The prefix for all names */
     private static final String NAME_PREFIX = "iv.guice.asynchronous";
@@ -92,7 +92,7 @@ public class Asynchronizer {
     public static final Key<Shutdownable> KEY_SHUTDOWNABLE = Key.get(Shutdownable.class, Names.named(NAME_SHUTDOWNABLE));
 
     /** Static Class */
-    private Asynchronizer() {
+    private GuiceAsynchronous() {
 
     }
 

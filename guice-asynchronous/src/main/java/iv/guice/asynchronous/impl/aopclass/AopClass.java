@@ -25,6 +25,7 @@ public class AopClass<T> {
     private Key<T> key;
     private Object source;
     private AopMethod[] methods;
+    private AopConstructor constructor;
     
     private Binding<?> bindingSource;
     
@@ -44,6 +45,17 @@ public class AopClass<T> {
     public void setKey(Key<T> key) {
         this.key = key;
     }
+    
+    public AopConstructor getConstructor() {
+        return constructor;
+    }
+
+
+    
+    public void setConstructor(AopConstructor constructor) {
+        this.constructor = constructor;
+    }
+
 
     public AopMethod[] getMethods() {
         return methods;

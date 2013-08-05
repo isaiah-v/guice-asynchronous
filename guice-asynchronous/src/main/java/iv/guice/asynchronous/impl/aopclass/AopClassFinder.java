@@ -18,6 +18,8 @@ package iv.guice.asynchronous.impl.aopclass;
 import iv.guice.asynchronous.Asynchronous;
 import iv.guice.asynchronous.impl.elements.ElementsBean;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -29,10 +31,15 @@ import org.aopalliance.intercept.MethodInterceptor;
 
 import com.google.inject.Binding;
 import com.google.inject.Key;
+import com.google.inject.Provider;
+import com.google.inject.spi.ConstructorBinding;
 import com.google.inject.spi.DefaultBindingTargetVisitor;
+import com.google.inject.spi.Dependency;
 import com.google.inject.spi.InterceptorBinding;
 import com.google.inject.spi.LinkedKeyBinding;
 import com.google.inject.spi.UntargettedBinding;
+
+import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
 public class AopClassFinder {
 
@@ -49,17 +56,90 @@ public class AopClassFinder {
 
             Object source = b.getSource();
 
+            AopConstructor constructor = getAopConstructor(key, b);
             AopMethod[] methods = getAopMethods(key, elements);
 
-            value.add(createAopClass(source, key, methods, b));
+            value.add(createAopClass(source, key, constructor, methods, b));
         }
 
         return value.isEmpty() ? null : value.toArray(new AopClass[value.size()]);
     }
+    
+    private static AopConstructor getAopConstructor(Key<?> key, Binding<?> b) {
+        Class<?> clazz = getRawType(key);
+        
+        AopConstructor aopConstructor = null;
+        if(b instanceof ConstructorBinding) {
+            aopConstructor = getAopConstructor((ConstructorBinding<?>)b);
+        } else {
+            aopConstructor = getAopConstructor(clazz);
+        }
+        
+        return aopConstructor==null ? getAopConstructor() : aopConstructor;
+    }
+    
+    private static AopConstructor getAopConstructor() {
+        AopConstructor aopConstructor = new AopConstructor();
+        aopConstructor.setArgumentTypes(new Class[0]);
+        aopConstructor.setArgumentKeys(new Key[0]);
+        
+        return aopConstructor;
+    }
+    
+    private static AopConstructor getAopConstructor(Class<?> clazz) {
+        Constructor<?> c = findInjectConstructor(clazz);
+        if(c==null) return null;
+        
+        Class<?>[] argumentTypes = c.getParameterTypes();
+        Key<?>[] argumentKeys = new Key[argumentTypes.length];
+        
+        Provider<?>[] provider = new Provider[argumentTypes.length];
+        for(int i=0; i<provider.length; i++) {
+            Class<?> argclazz = argumentTypes[i];
+            Key<?> key = getKey(argclazz, c.getParameterAnnotations()[i]);
+            
+            argumentKeys[i] = key;
+        }
+        
+        AopConstructor aopConstructor = new AopConstructor();
+        aopConstructor.setArgumentTypes(argumentTypes);
+        aopConstructor.setArgumentKeys(argumentKeys);
+        
+        return aopConstructor;
+    }
+    
+    private static AopConstructor getAopConstructor(ConstructorBinding<?> binding) {
+        List<Dependency<?>> dependencies = binding.getConstructor().getDependencies();
+        
+        Class<?>[] argumentTypes = new Class[dependencies.size()];
+        Key<?>[] argumentKeys = new Key[dependencies.size()];
+        
+        for(int i=0; i<argumentTypes.length; i++) {
+            Dependency<?> d = dependencies.get(i);
+            Key<?> key = d.getKey();
+            
+            argumentTypes[i] = getRawType(d.getKey());
+            argumentKeys[i] = key;
+        }
+        
+        AopConstructor aopConstructor = new AopConstructor();
+        aopConstructor.setArgumentTypes(argumentTypes);
+        aopConstructor.setArgumentKeys(argumentKeys);
+        
+        return aopConstructor;
+    }
+    
+    private static <T> Key<T> getKey(Class<T> clazz, Annotation[] annotations) {
+        Annotation a = findBindingAnnotation(annotations);
+        if(a!=null)
+            return Key.get(clazz, a);
+        else
+            return Key.get(clazz);
+    }
 
     private static AopMethod[] getAopMethods(Key<?> key, ElementsBean elements) {
         if (key == null) return null;
-        Class<?> clazz = key.getTypeLiteral().getRawType();
+        Class<?> clazz = getRawType(key);
 
         List<AopMethod> value = new LinkedList<AopMethod>();
 
@@ -104,10 +184,11 @@ public class AopClassFinder {
         }
     }
     
-    private static <T> AopClass<T> createAopClass(Object source, Key<T> key, AopMethod[] methods, Binding<?> binding) {
+    private static <T> AopClass<T> createAopClass(Object source, Key<T> key, AopConstructor constructor, AopMethod[] methods, Binding<?> binding) {
         AopClass<T> aopClass = new AopClass<T>();
         aopClass.setSource(source);
         aopClass.setKey(key);
+        aopClass.setConstructor(constructor);
         aopClass.setMethods(methods);
         aopClass.setBindingSource(binding);
 
@@ -129,6 +210,12 @@ public class AopClassFinder {
                 return binding.getLinkedKey();
             else
                 return null; // only interested in the end target class
+        }
+        
+        @Override
+        public Key<?> visit(ConstructorBinding<? extends Object> binding) {
+            Key<?> key = binding.getKey();
+            return key;
         }
 
         @Override

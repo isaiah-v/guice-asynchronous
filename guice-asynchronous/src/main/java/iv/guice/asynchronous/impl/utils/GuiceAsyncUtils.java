@@ -70,7 +70,8 @@ public class GuiceAsyncUtils {
         return key.getTypeLiteral().getRawType();
     }
     
-    public static Constructor<?> findInjectConstructor(Class<?> clazz) {
+    @SuppressWarnings("unchecked")
+    public static <T> Constructor<T> findInjectConstructor(Class<T> clazz) {
         Constructor<?> constructor = null;
         for(Constructor<?> c : clazz.getConstructors()) {
             if(c.getAnnotation(Inject.class)==null) continue;
@@ -79,6 +80,6 @@ public class GuiceAsyncUtils {
             
             constructor = c;
         }
-        return constructor;
+        return (Constructor<T>) constructor;
     }
 }

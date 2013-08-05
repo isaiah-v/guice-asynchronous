@@ -18,7 +18,6 @@ package iv.guice.asynchronous.impl.cglib;
 import iv.guice.asynchronous.impl.aopclass.AopClass;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -123,29 +122,21 @@ public class EnhancerElement<T> implements Element {
     }
     
     public void bindObjectFactory(Binder binder) {
-        Constructor<?> c = findInjectConstructor(getRawType(getKey()));
-        if(c==null) return;
+        Class<?>[] argumentTypes = aopClass.getConstructor().getArgumentTypes();
+        Key<?>[] argumentKeys = aopClass.getConstructor().getArgumentKeys();
         
-        Class<?>[] argumentTypes = c.getParameterTypes();
+        assert argumentTypes.length==argumentKeys.length;
         
-        Provider<?>[] provider = new Provider[argumentTypes.length];
+        Provider<?>[] provider = new Provider[argumentKeys.length];
         for(int i=0; i<provider.length; i++) {
-            Class<?> clazz = argumentTypes[i];
+            Key<?> key = argumentKeys[i];
             
-            Provider<?> p = binder.getProvider(getKey(clazz, c.getParameterAnnotations()[i]));
+            Provider<?> p = binder.getProvider(key);
             provider[i] = p;
         }
         
         binder.bind(Class[].class).toInstance(argumentTypes);
         binder.bind(Provider[].class).toInstance(provider);
-    }
-    
-    private <T2> Key<T2> getKey(Class<T2> clazz, Annotation[] annotations) {
-        Annotation a = findBindingAnnotation(annotations);
-        if(a!=null)
-            return Key.get(clazz, a);
-        else
-            return Key.get(clazz);
     }
     
     private class ScopeBinderVisitor implements BindingScopingVisitor<Void> {
