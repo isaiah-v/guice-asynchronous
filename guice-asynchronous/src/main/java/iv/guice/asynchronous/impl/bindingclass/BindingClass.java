@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.impl.aopclass;
+package iv.guice.asynchronous.impl.bindingclass;
 
 import java.util.Arrays;
 
 import com.google.inject.Binding;
 import com.google.inject.Key;
 
-public class AopClass<T> {
+public class BindingClass<T> {
 
     private Key<T> key;
     private Object source;
-    private AopMethod[] methods;
-    private AopConstructor constructor;
-    
+    private BindingMethod[] methods;
+    private BindingConstructor constructor;
+
     private Binding<?> bindingSource;
-    
+
     public Binding<?> getBindingSource() {
         return bindingSource;
     }
 
-    
     public void setBindingSource(Binding<?> bindingSource) {
         this.bindingSource = bindingSource;
     }
@@ -45,23 +44,20 @@ public class AopClass<T> {
     public void setKey(Key<T> key) {
         this.key = key;
     }
-    
-    public AopConstructor getConstructor() {
+
+    public BindingConstructor getConstructor() {
         return constructor;
     }
 
-
-    
-    public void setConstructor(AopConstructor constructor) {
+    public void setConstructor(BindingConstructor constructor) {
         this.constructor = constructor;
     }
 
-
-    public AopMethod[] getMethods() {
+    public BindingMethod[] getMethods() {
         return methods;
     }
 
-    public void setMethods(AopMethod[] methods) {
+    public void setMethods(BindingMethod[] methods) {
         this.methods = methods;
     }
 
@@ -75,6 +71,8 @@ public class AopClass<T> {
 
     @Override
     public String toString() {
-        return "AopClass [key=" + key + ", source=" + source + ", methods=" + Arrays.toString(methods) + ", bindingSource=" + bindingSource + "]";
+        return "BindingClass [key=" + key + ", source=" + source + ", methods="
+                + Arrays.toString(methods) + ", constructor=" + constructor
+                + ", bindingSource=" + bindingSource + "]";
     }
 }

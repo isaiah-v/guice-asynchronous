@@ -15,8 +15,8 @@
  */
 package iv.guice.asynchronous;
 
-import iv.guice.asynchronous.impl.aopclass.AopClass;
-import iv.guice.asynchronous.impl.aopclass.AopClassFinder;
+import iv.guice.asynchronous.impl.bindingclass.BindingClass;
+import iv.guice.asynchronous.impl.bindingclass.BindingClassFinder;
 import iv.guice.asynchronous.impl.cglib.EnhancerElement;
 import iv.guice.asynchronous.impl.cglib.EnhancerFactory;
 import iv.guice.asynchronous.impl.elements.ElementsBean;
@@ -116,8 +116,8 @@ public class GuiceAsynchronous {
 
         ElementsBean elements = ElementsBeanFactory.createElementsBean(modules);
 
-        AopClass<?>[] aopClasses = AopClassFinder.findAopClasses(elements);
-        for (AopClass<?> aopClass : aopClasses) {
+        BindingClass<?>[] aopClasses = BindingClassFinder.findAopClasses(elements);
+        for (BindingClass<?> aopClass : aopClasses) {
             Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, aopClass);
             EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass,e);
 

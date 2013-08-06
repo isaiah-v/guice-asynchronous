@@ -15,7 +15,7 @@
  */
 package iv.guice.asynchronous.impl.cglib;
 
-import iv.guice.asynchronous.impl.aopclass.AopClass;
+import iv.guice.asynchronous.impl.bindingclass.BindingClass;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -47,10 +47,10 @@ import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
  */
 public class EnhancerElement<T> implements Element {
 
-    private final AopClass<T> aopClass;
+    private final BindingClass<T> aopClass;
     private final Enhancer enhancer;
 
-    public EnhancerElement(AopClass<T> aopClass, Enhancer enhancer) {
+    public EnhancerElement(BindingClass<T> aopClass, Enhancer enhancer) {
         this.aopClass = aopClass;
         this.enhancer = enhancer;
     }
@@ -117,7 +117,7 @@ public class EnhancerElement<T> implements Element {
         throw new UnsupportedOperationException();
     }
     
-    public static <T> EnhancerElement<T> createEnhancerElement(AopClass<T> aopClass, Enhancer enhancer) {
+    public static <T> EnhancerElement<T> createEnhancerElement(BindingClass<T> aopClass, Enhancer enhancer) {
         return new EnhancerElement<T>(aopClass, enhancer);
     }
     

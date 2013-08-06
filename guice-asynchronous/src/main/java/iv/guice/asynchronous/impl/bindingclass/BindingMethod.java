@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package iv.guice.asynchronous.impl.aopclass;
+package iv.guice.asynchronous.impl.bindingclass;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -22,13 +22,13 @@ import java.util.List;
 
 import org.aopalliance.intercept.MethodInterceptor;
 
-public class AopMethod {
+public class BindingMethod {
 
     private final Method method;
     private final boolean isAsynchronous;
     private final List<MethodInterceptor> interceptors;
 
-    public AopMethod(Method method, boolean isAsynchronous, List<MethodInterceptor> interceptors) {
+    public BindingMethod(Method method, boolean isAsynchronous, List<MethodInterceptor> interceptors) {
         this.method = method;
         this.isAsynchronous = isAsynchronous;
         this.interceptors = interceptors == null ? null : Collections.unmodifiableList(new ArrayList<MethodInterceptor>(interceptors));
@@ -48,6 +48,7 @@ public class AopMethod {
 
     @Override
     public String toString() {
-        return "AopMethod [method=" + method + ", isAsynchronous=" + isAsynchronous + ", interceptors=" + interceptors + "]";
+        return "BindingMethod [method=" + method + ", isAsynchronous="
+                + isAsynchronous + ", interceptors=" + interceptors + "]";
     }
 }

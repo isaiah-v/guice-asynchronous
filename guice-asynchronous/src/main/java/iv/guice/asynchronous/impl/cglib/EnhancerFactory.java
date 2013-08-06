@@ -15,8 +15,8 @@
  */
 package iv.guice.asynchronous.impl.cglib;
 
-import iv.guice.asynchronous.impl.aopclass.AopClass;
-import iv.guice.asynchronous.impl.aopclass.AopMethod;
+import iv.guice.asynchronous.impl.bindingclass.BindingClass;
+import iv.guice.asynchronous.impl.bindingclass.BindingMethod;
 import iv.guice.asynchronous.impl.manager.ExceptionListener;
 
 import java.lang.reflect.Method;
@@ -51,16 +51,16 @@ public class EnhancerFactory {
 
     /**
      * Creates an asynchronous {@link Enhancer} based on the given
-     * {@link AopClass}
+     * {@link BindingClass}
      * 
      * @param executor
      *            The executor used to run asynchronous tasks
      * @param aopClass
      *            The aop class that defines the executor's structure
      * @return A new asynchronous {@link Enhancer} based on the given
-     *         {@link AopClass}
+     *         {@link BindingClass}
      */
-    public static Enhancer createEnhancer(Executor executor, ExceptionListener exceptionListener, AopClass<?> aopClass) {
+    public static Enhancer createEnhancer(Executor executor, ExceptionListener exceptionListener, BindingClass<?> aopClass) {
         Class<?> clazz = aopClass.getKey().getTypeLiteral().getRawType();
 
         Enhancer enhancer = new Enhancer();
@@ -80,7 +80,7 @@ public class EnhancerFactory {
         callbackList.add(new BasicNoOp());
         typeList.add(NoOp.class);
 
-        for (AopMethod method : aopClass.getMethods()) {
+        for (BindingMethod method : aopClass.getMethods()) {
             if (method == null) continue;
 
             List<org.aopalliance.intercept.MethodInterceptor> interceptors = method.getInterceptors();
