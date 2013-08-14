@@ -41,17 +41,18 @@ import com.google.inject.spi.UntargettedBinding;
 
 import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
-public class BindingClassFinder {
+public class BindingClassFactoryImpl implements BindingClassFactory {
 
-    private BindingClassFinder() {}
-
-    public static BindingClass<?>[] findAopClasses(ElementsBean elements) {
+    public BindingClass<?>[] getBindingClasses(ElementsBean elements) {
+        BindingsTargetVisitor btv = new BindingsTargetVisitor(elements);
+        return getBindingClasses(elements, btv);
+    }
+    
+    protected BindingClass<?>[] getBindingClasses(ElementsBean elements, BindingsTargetVisitor btv) {
         Collection<BindingClass<?>> value = new ArrayList<BindingClass<?>>();
-
-        BindingsTargetVisitor tv = new BindingsTargetVisitor(elements);
         
         for (Binding<?> b : elements.getBindings().values()) {
-            Key<?> key = b.acceptTargetVisitor(tv);
+            Key<?> key = b.acceptTargetVisitor(btv);
             if (key == null || !isAsyncClass(key)) continue;
 
             Object source = b.getSource();
@@ -65,7 +66,7 @@ public class BindingClassFinder {
         return value.isEmpty() ? null : value.toArray(new BindingClass[value.size()]);
     }
     
-    private static BindingConstructor getAopConstructor(Key<?> key, Binding<?> b) {
+    private BindingConstructor getAopConstructor(Key<?> key, Binding<?> b) {
         Class<?> clazz = getRawType(key);
         
         BindingConstructor aopConstructor = null;
@@ -78,7 +79,7 @@ public class BindingClassFinder {
         return aopConstructor==null ? getAopConstructor() : aopConstructor;
     }
     
-    private static BindingConstructor getAopConstructor() {
+    private BindingConstructor getAopConstructor() {
         BindingConstructor aopConstructor = new BindingConstructor();
         aopConstructor.setArgumentTypes(new Class[0]);
         aopConstructor.setArgumentKeys(new Key[0]);
@@ -86,7 +87,7 @@ public class BindingClassFinder {
         return aopConstructor;
     }
     
-    private static BindingConstructor getAopConstructor(Class<?> clazz) {
+    private BindingConstructor getAopConstructor(Class<?> clazz) {
         Constructor<?> c = findInjectConstructor(clazz);
         if(c==null) return null;
         
@@ -108,7 +109,7 @@ public class BindingClassFinder {
         return aopConstructor;
     }
     
-    private static BindingConstructor getAopConstructor(ConstructorBinding<?> binding) {
+    private BindingConstructor getAopConstructor(ConstructorBinding<?> binding) {
         List<Dependency<?>> dependencies = binding.getConstructor().getDependencies();
         
         Class<?>[] argumentTypes = new Class[dependencies.size()];
@@ -129,7 +130,7 @@ public class BindingClassFinder {
         return aopConstructor;
     }
     
-    private static <T> Key<T> getKey(Class<T> clazz, Annotation[] annotations) {
+    private <T> Key<T> getKey(Class<T> clazz, Annotation[] annotations) {
         Annotation a = findBindingAnnotation(annotations);
         if(a!=null)
             return Key.get(clazz, a);
@@ -137,7 +138,7 @@ public class BindingClassFinder {
             return Key.get(clazz);
     }
 
-    private static BindingMethod[] getAopMethods(Key<?> key, ElementsBean elements) {
+    private BindingMethod[] getAopMethods(Key<?> key, ElementsBean elements) {
         if (key == null) return null;
         Class<?> clazz = getRawType(key);
 
@@ -166,7 +167,7 @@ public class BindingClassFinder {
         return value.isEmpty() ? null : value.toArray(new BindingMethod[value.size()]);
     }
 
-    private static boolean isAsyncClass(Key<?> key) {
+    private boolean isAsyncClass(Key<?> key) {
         Class<?> clazz = key.getTypeLiteral().getRawType();
 
         for (Method method : clazz.getDeclaredMethods()) {
@@ -175,7 +176,7 @@ public class BindingClassFinder {
         return false;
     }
 
-    private static void validateAsynchronousSignature(Method method) {
+    private void validateAsynchronousSignature(Method method) {
         if (!void.class.equals(method.getReturnType())) {
             throw new RuntimeException("Asynchronous methods must return void: " + method);
         }
@@ -184,7 +185,7 @@ public class BindingClassFinder {
         }
     }
     
-    private static <T> BindingClass<T> createAopClass(Object source, Key<T> key, BindingConstructor constructor, BindingMethod[] methods, Binding<?> binding) {
+    private <T> BindingClass<T> createAopClass(Object source, Key<T> key, BindingConstructor constructor, BindingMethod[] methods, Binding<?> binding) {
         BindingClass<T> aopClass = new BindingClass<T>();
         aopClass.setSource(source);
         aopClass.setKey(key);
@@ -195,7 +196,7 @@ public class BindingClassFinder {
         return aopClass;
     }
 
-    private static class BindingsTargetVisitor extends DefaultBindingTargetVisitor<Object, Key<?>> {
+    private class BindingsTargetVisitor extends DefaultBindingTargetVisitor<Object, Key<?>> {
 
         private final ElementsBean elementViewer;
 

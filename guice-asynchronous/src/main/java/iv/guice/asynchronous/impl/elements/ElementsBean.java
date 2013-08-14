@@ -47,6 +47,10 @@ public class ElementsBean {
     public Collection<Element> getOthers() {
         return others;
     }
+    
+    public boolean isEmpty() {
+        return bindings.isEmpty() && interceptors.isEmpty() && others.isEmpty();
+    }
 
     public Collection<Element> createElementCollection() {
         int size = bindings.size() + interceptors.size() + others.size();

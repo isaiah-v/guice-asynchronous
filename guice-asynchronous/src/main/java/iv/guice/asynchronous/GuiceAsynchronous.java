@@ -16,11 +16,13 @@
 package iv.guice.asynchronous;
 
 import iv.guice.asynchronous.impl.bindingclass.BindingClass;
-import iv.guice.asynchronous.impl.bindingclass.BindingClassFinder;
+import iv.guice.asynchronous.impl.bindingclass.BindingClassFactory;
+import iv.guice.asynchronous.impl.bindingclass.BindingClassFactoryImpl;
 import iv.guice.asynchronous.impl.cglib.EnhancerElement;
 import iv.guice.asynchronous.impl.cglib.EnhancerFactory;
 import iv.guice.asynchronous.impl.elements.ElementsBean;
 import iv.guice.asynchronous.impl.elements.ElementsBeanFactory;
+import iv.guice.asynchronous.impl.elements.ElementsBeanFactoryImpl;
 import iv.guice.asynchronous.impl.manager.AsynchronousManager;
 import iv.guice.asynchronous.impl.utils.MyThreadFactory;
 
@@ -93,7 +95,6 @@ public class GuiceAsynchronous {
 
     /** Static Class */
     private GuiceAsynchronous() {
-
     }
 
     /**
@@ -112,22 +113,44 @@ public class GuiceAsynchronous {
      */
     public static final Module asynchronize(ExecutorService executor, Module... modules) {
         if (executor == null) executor = createDefaultExecutor();
+        
         AsynchronousManager aManager = new AsynchronousManager(executor);
+        BindingClassFactory bindingClassFinder = new BindingClassFactoryImpl();
+        ElementsBeanFactory elementsBeanFactory = new ElementsBeanFactoryImpl();
 
-        ElementsBean elements = ElementsBeanFactory.createElementsBean(modules);
+        return asynchronize(modules, aManager, elementsBeanFactory, bindingClassFinder);
+    }
+    
+    /** @see #asynchronize(ExecutorService, Module...) */
+    protected static Module asynchronize(Module[] modules, AsynchronousManager aManager, ElementsBeanFactory elementsBeanFactory, BindingClassFactory bindingClassFinder) {
+        
+        // validate input
+        if(modules==null || modules.length==0) throw new IllegalArgumentException("there no modules to process");
+        if(aManager==null) throw new NullPointerException("aManager is null");
+        if(elementsBeanFactory==null) throw new NullPointerException("elementsBeanFactory is null");
+        if(bindingClassFinder==null) throw new NullPointerException("bindingClassFinder is null");
+        
+        ElementsBean elements = elementsBeanFactory.createElementsBean(modules);
 
-        BindingClass<?>[] aopClasses = BindingClassFinder.findAopClasses(elements);
-        for (BindingClass<?> aopClass : aopClasses) {
-            Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, aopClass);
-            EnhancerElement<?> element = EnhancerElement.createEnhancerElement(aopClass,e);
+        BindingClass<?>[] bindingClasses = bindingClassFinder.getBindingClasses(elements);
+        if(bindingClasses!=null) {
+            // classes were found to have asynchronous methods
+            for (BindingClass<?> bindingClass : bindingClasses) {
+                Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, bindingClass);
+                EnhancerElement<?> element = EnhancerElement.createEnhancerElement(bindingClass,e);
+    
+                elements.getBindings().remove(bindingClass.getKey());
+                elements.getOthers().add(element);
+            }
+            
+            elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, bindInstance(KEY_ASYNCHRONOUS_CONTEXT, aManager));
+            elements.getBindings().put(KEY_SHUTDOWNABLE, bindInstance(KEY_SHUTDOWNABLE, aManager));
 
-            elements.getBindings().remove(aopClass.getKey());
-            elements.getOthers().add(element);
+        } else {
+            // no classes were found to have asynchronous methods
+            aManager.shutdownNow();  
         }
-
-        elements.getBindings().put(KEY_ASYNCHRONOUS_CONTEXT, bindInstance(KEY_ASYNCHRONOUS_CONTEXT, aManager));
-        elements.getBindings().put(KEY_SHUTDOWNABLE, bindInstance(KEY_SHUTDOWNABLE, aManager));
-
+        
         return Elements.getModule(elements.createElementCollection());
     }
 
