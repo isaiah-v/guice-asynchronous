@@ -20,9 +20,9 @@ import iv.guice.asynchronous.impl.bindingclass.BindingClassFactory;
 import iv.guice.asynchronous.impl.bindingclass.BindingClassFactoryImpl;
 import iv.guice.asynchronous.impl.cglib.EnhancerElement;
 import iv.guice.asynchronous.impl.cglib.EnhancerFactory;
-import iv.guice.asynchronous.impl.elements.ElementsBean;
-import iv.guice.asynchronous.impl.elements.ElementsBeanFactory;
-import iv.guice.asynchronous.impl.elements.ElementsBeanFactoryImpl;
+import iv.guice.asynchronous.impl.elements.ElementContainer;
+import iv.guice.asynchronous.impl.elements.ElementContainerFactory;
+import iv.guice.asynchronous.impl.elements.ElementContainerFactoryImpl;
 import iv.guice.asynchronous.impl.manager.AsynchronousManager;
 import iv.guice.asynchronous.impl.utils.MyThreadFactory;
 
@@ -38,7 +38,6 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 import com.google.inject.name.Named;
-import com.google.inject.spi.Elements;
 
 import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
@@ -116,24 +115,24 @@ public class GuiceAsynchronous {
         
         AsynchronousManager aManager = new AsynchronousManager(executor);
         BindingClassFactory bindingClassFinder = new BindingClassFactoryImpl();
-        ElementsBeanFactory elementsBeanFactory = new ElementsBeanFactoryImpl();
+        
+        ElementContainerFactory elementContainerFactory = new ElementContainerFactoryImpl();
+        ElementContainer elements = elementContainerFactory.createElementContainer(modules);
 
-        return asynchronize(modules, aManager, elementsBeanFactory, bindingClassFinder);
+        return asynchronize(modules, aManager, elements, bindingClassFinder);
     }
     
     /** @see #asynchronize(ExecutorService, Module...) */
-    protected static Module asynchronize(Module[] modules, AsynchronousManager aManager, ElementsBeanFactory elementsBeanFactory, BindingClassFactory bindingClassFinder) {
+    protected static Module asynchronize(Module[] modules, AsynchronousManager aManager, ElementContainer elements, BindingClassFactory bindingClassFinder) {
         
         // validate input
         if(modules==null || modules.length==0) throw new IllegalArgumentException("there no modules to process");
         if(aManager==null) throw new NullPointerException("aManager is null");
-        if(elementsBeanFactory==null) throw new NullPointerException("elementsBeanFactory is null");
+        if(elements==null) throw new NullPointerException("elements is null");
         if(bindingClassFinder==null) throw new NullPointerException("bindingClassFinder is null");
-        
-        ElementsBean elements = elementsBeanFactory.createElementsBean(modules);
 
         BindingClass<?>[] bindingClasses = bindingClassFinder.getBindingClasses(elements);
-        if(bindingClasses!=null) {
+        if(bindingClasses!=null && bindingClasses.length>0) {
             // classes were found to have asynchronous methods
             for (BindingClass<?> bindingClass : bindingClasses) {
                 Enhancer e = EnhancerFactory.createEnhancer(aManager, aManager, bindingClass);
@@ -151,7 +150,7 @@ public class GuiceAsynchronous {
             aManager.shutdownNow();  
         }
         
-        return Elements.getModule(elements.createElementCollection());
+        return elements.createModule();
     }
 
     /**

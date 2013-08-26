@@ -16,7 +16,7 @@
 package iv.guice.asynchronous.impl.bindingclass;
 
 import iv.guice.asynchronous.Asynchronous;
-import iv.guice.asynchronous.impl.elements.ElementsBean;
+import iv.guice.asynchronous.impl.elements.ElementContainer;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -43,12 +43,12 @@ import static iv.guice.asynchronous.impl.utils.GuiceAsyncUtils.*;
 
 public class BindingClassFactoryImpl implements BindingClassFactory {
 
-    public BindingClass<?>[] getBindingClasses(ElementsBean elements) {
+    public BindingClass<?>[] getBindingClasses(ElementContainer elements) {
         BindingsTargetVisitor btv = new BindingsTargetVisitor(elements);
         return getBindingClasses(elements, btv);
     }
     
-    protected BindingClass<?>[] getBindingClasses(ElementsBean elements, BindingsTargetVisitor btv) {
+    protected BindingClass<?>[] getBindingClasses(ElementContainer elements, BindingsTargetVisitor btv) {
         Collection<BindingClass<?>> value = new ArrayList<BindingClass<?>>();
         
         for (Binding<?> b : elements.getBindings().values()) {
@@ -138,7 +138,7 @@ public class BindingClassFactoryImpl implements BindingClassFactory {
             return Key.get(clazz);
     }
 
-    private BindingMethod[] getAopMethods(Key<?> key, ElementsBean elements) {
+    private BindingMethod[] getAopMethods(Key<?> key, ElementContainer elements) {
         if (key == null) return null;
         Class<?> clazz = getRawType(key);
 
@@ -148,7 +148,7 @@ public class BindingClassFactoryImpl implements BindingClassFactory {
             boolean isAsynchronous = method.isAnnotationPresent(Asynchronous.class);
 
             List<MethodInterceptor> list = null;
-            for (InterceptorBinding ib : elements.getInterceptors()) {
+            for (InterceptorBinding ib : elements.getInterceptorBindings()) {
                 if (!ib.getClassMatcher().matches(clazz) || !ib.getMethodMatcher().matches(method))
                     continue;
 
@@ -198,15 +198,15 @@ public class BindingClassFactoryImpl implements BindingClassFactory {
 
     private class BindingsTargetVisitor extends DefaultBindingTargetVisitor<Object, Key<?>> {
 
-        private final ElementsBean elementViewer;
+        private final ElementContainer elements;
 
-        BindingsTargetVisitor(ElementsBean elementViewer) {
-            this.elementViewer = elementViewer;
+        BindingsTargetVisitor(ElementContainer elements) {
+            this.elements = elements;
         }
 
         @Override
         public Key<?> visit(LinkedKeyBinding<? extends Object> binding) {
-            Binding<?> targetBinding = elementViewer.getBindings().get(binding.getLinkedKey());
+            Binding<?> targetBinding = elements.getBindings().get(binding.getLinkedKey());
             if (targetBinding == null)
                 return binding.getLinkedKey();
             else
