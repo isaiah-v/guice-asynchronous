@@ -208,7 +208,7 @@ public class BindingClassFactoryImpl implements BindingClassFactory {
         public Key<?> visit(LinkedKeyBinding<? extends Object> binding) {
             Binding<?> targetBinding = elements.getBindings().get(binding.getLinkedKey());
             if (targetBinding == null)
-                return binding.getLinkedKey();
+                return binding.getKey();
             else
                 return null; // only interested in the end target class
         }
