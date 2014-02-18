@@ -19,8 +19,6 @@ package org.ivcode.guice.asynchronous.impl.cglib;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 
-import org.ivcode.guice.asynchronous.impl.manager.ExceptionListener;
-
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -28,12 +26,10 @@ class AsynchronusInterceptor implements MethodInterceptor {
 
     private final Executor executor;
     private final MethodInterceptor methodInterceptor;
-    private final ExceptionListener exceptionListener;
 
-    public AsynchronusInterceptor(Executor executor, ExceptionListener exceptionListener, MethodInterceptor methodInterceptor) {
+    public AsynchronusInterceptor(Executor executor, MethodInterceptor methodInterceptor) {
         this.executor = executor;
         this.methodInterceptor = methodInterceptor;
-        this.exceptionListener = exceptionListener;
     }
 
     public Object intercept(final Object obj, final Method method, final Object[] args, final MethodProxy proxy) throws Throwable {
@@ -51,7 +47,6 @@ class AsynchronusInterceptor implements MethodInterceptor {
         final MethodProxy proxy;
 
         public TaskExecutor(Object obj, Method method, Object[] args, MethodProxy proxy) {
-            super();
             this.obj = obj;
             this.method = method;
             this.args = args;
@@ -62,11 +57,8 @@ class AsynchronusInterceptor implements MethodInterceptor {
             try {
                 // the wrapped method intercepter should invoke the method
                 methodInterceptor.intercept(obj, method, args, proxy);
-            } catch (Throwable th) {
-                StacktracePruner.pruneStacktrace(th);
-                
-                th.printStackTrace();
-                exceptionListener.onException(method, th);
+            } catch (final Throwable th) {
+            	throw new AsyncTaskException(method, th);
             }
         }
     }

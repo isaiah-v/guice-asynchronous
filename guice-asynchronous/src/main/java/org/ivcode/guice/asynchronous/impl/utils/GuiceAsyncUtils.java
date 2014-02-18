@@ -17,31 +17,28 @@ package org.ivcode.guice.asynchronous.impl.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ScopeAnnotation;
-import com.google.inject.TypeLiteralFactory;
-import com.google.inject.spi.InjectionRequest;
-import com.google.inject.spi.InstanceBinding;
 
 public class GuiceAsyncUtils {
 
+	/** The thread name prefix for the internal thread factory */
+	private static final String THREAD_NAME_PREFIX = "guice-asynchronous";
+	
     public static Object getSource() {
         return Thread.currentThread().getStackTrace()[2];
-    }
+    }   
 
-    public static <T> InjectionRequest<T> requestInjection(T instance) {
-        @SuppressWarnings("unchecked")
-        Class<T> clazz = (Class<T>) instance.getClass();
-        return new InjectionRequest<T>(getSource(), TypeLiteralFactory.<T> createTypeLiteral(clazz), instance);
+    public static <T> Annotation findScopeAnnotation(Key<T> key) {
+    	return findScopeAnnotation(getRawType(key).getDeclaredAnnotations());
     }
-
-    public static <T> InstanceBinding<T> bindInstance(Key<T> key, T instance) {
-        return new InstanceBindingImpl<T>(key, instance, getSource());
-    }
-
+    
     public static Annotation findScopeAnnotation(Annotation[] annotations) {
         Annotation annotation = null;
 
@@ -82,4 +79,15 @@ public class GuiceAsyncUtils {
         }
         return (Constructor<T>) constructor;
     }
+    
+    /**
+	 * Creates an executor service when one is not passed into the
+	 * {@link #asynchronize(ExecutorService, Module...)} method
+	 * 
+	 * @return The default executor service
+	 */
+	public static ExecutorService createDefaultExecutor(Annotation annotation) {
+		ThreadFactory threadFactory = new MyThreadFactory(THREAD_NAME_PREFIX + " : " + (annotation == null ? "" : (annotation.toString() + " : ")), true);
+		return Executors.newCachedThreadPool(threadFactory);
+	}
 }

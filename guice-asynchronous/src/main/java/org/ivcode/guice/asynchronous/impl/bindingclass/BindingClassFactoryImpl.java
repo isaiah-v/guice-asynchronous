@@ -37,22 +37,16 @@ import com.google.inject.Key;
 import com.google.inject.Provider;
 
 public class BindingClassFactoryImpl implements BindingClassFactory {
-
-	private final Collection<InterceptorBean> interceptors;
 	
-	public BindingClassFactoryImpl(Collection<InterceptorBean> interceptors) {
-		this.interceptors = interceptors;
-	}
-	
-	public <T> BindingClass<T> getBindingClass(Key<T> key, Constructor<? extends T> c) {
+	public <T> BindingClass<T> getBindingClass(Key<T> key, Constructor<? extends T> constructor, Collection<InterceptorBean> interceptors) {
 		if(!isAsyncClass(key)) {
 			throw new IllegalArgumentException("class contains no asychornous annotations");
 		}
 		
-		BindingConstructor constructor = getAopConstructor(key, c);
-		BindingMethod[] methods = getAopMethods(key);
+		BindingConstructor bconstructor = getAopConstructor(key, constructor);
+		BindingMethod[] methods = getAopMethods(key, interceptors);
 		
-		return createAopClass(key, constructor, methods);
+		return createAopClass(key, bconstructor, methods);
 	}
     
     
@@ -117,13 +111,14 @@ public class BindingClassFactoryImpl implements BindingClassFactory {
     
     private <T> Key<T> getKey(Class<T> clazz, Annotation[] annotations) {
         Annotation a = findBindingAnnotation(annotations);
-        if(a!=null)
+        if(a!=null) {
             return Key.get(clazz, a);
-        else
+        } else {
             return Key.get(clazz);
+        }
     }
     
-    private BindingMethod[] getAopMethods(Key<?> key) {
+    private BindingMethod[] getAopMethods(Key<?> key, Collection<InterceptorBean> interceptors) {
         if (key == null) return null;
         Class<?> clazz = getRawType(key);
 

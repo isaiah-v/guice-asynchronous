@@ -24,7 +24,8 @@ import org.ivcode.guice.asynchronous.helpers.callbacks.Callback;
 
 class CallbackExceptionsHandler {
 
-    private CallbackExceptionsHandler() {}
+    private CallbackExceptionsHandler() {
+    }
 
     public static int callbackException(Throwable th, Method method, Object... args) throws Throwable {
         return fail(th, method, args);

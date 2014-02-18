@@ -15,9 +15,13 @@
  */
 package org.ivcode.guice.asynchronous.impl.cglib;
 
+import java.lang.reflect.InvocationTargetException;
+
 import org.ivcode.guice.asynchronous.impl.utils.AssistedProvider;
 
+import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.reflect.FastConstructor;
 
 import com.google.inject.Inject;
 import com.google.inject.MembersInjector;
@@ -36,10 +40,12 @@ public class EnhancerProvider<T> implements AssistedProvider<T> {
     /** injects the members into the instance variable */
     @Inject
     private MembersInjector<T> membersInjector;
-
-    /** creates an instances of <code>T</code> */
+    
     @Inject
-    private Enhancer enhancer;
+    FastConstructor fastConstructor;
+    
+    @Inject
+    Callback[] callbacks;
     
     @Inject
     @SuppressWarnings("rawtypes")
@@ -75,7 +81,18 @@ public class EnhancerProvider<T> implements AssistedProvider<T> {
     
     @SuppressWarnings("unchecked")
     private T createInstance(Object[] arguments) {
-        return (T) enhancer.create(argumentTypes, arguments);
+    	final Class<?> enhanced = fastConstructor.getDeclaringClass();
+    	
+    	synchronized (enhanced) {
+	    	Enhancer.registerCallbacks(enhanced, callbacks);
+	    	try {
+	    		return (T) fastConstructor.newInstance(arguments);
+	    	} catch (InvocationTargetException e) {
+	    		throw new RuntimeException(e.getTargetException());
+	    	} finally {
+	    		Enhancer.registerCallbacks(enhanced, null);
+	    	}
+    	}
     }
 
     public int getArgumentCount() {

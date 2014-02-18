@@ -23,17 +23,18 @@ import java.util.List;
 import java.util.Set;
 
 import org.ivcode.guice.asynchronous.impl.cglib.InterceptorStackCallback.InterceptedMethodInvocation;
-import org.ivcode.guice.asynchronous.impl.manager.AsynchronousManager;
+import org.ivcode.guice.asynchronous.impl.context.AsynchronousContextImpl;
 
 import net.sf.cglib.proxy.MethodProxy;
 
 public class StacktracePruner {
 
-    private StacktracePruner() {}
+    private StacktracePruner() {
+    }
 
     private static final Set<String> AOP_INTERNAL_CLASSES = new HashSet<String>(Arrays.asList(InterceptorStackCallback.class.getName(), InterceptedMethodInvocation.class.getName(),
             MethodProxy.class.getName(), AsynchronusInterceptor.class.getName(), AsynchronusInterceptor.TaskExecutor.class.getName(), DirectInterceptor.class.getName(),
-            AsynchronousManager.class.getName(), AsynchronousManager.Task.class.getName()));
+            AsynchronousContextImpl.class.getName(), AsynchronousContextImpl.Task.class.getName()));
 
     /**
      * Removes stacktrace elements related to AOP internal mechanics from the

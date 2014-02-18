@@ -9,19 +9,16 @@ import org.aopalliance.intercept.MethodInterceptor;
 
 import com.google.inject.matcher.Matcher;
 
-public class InterceptorManager {
+public class InterceptorManager implements Cloneable {
 	
-	private final Collection<InterceptorBean> interceptors = new LinkedList<InterceptorBean>();
-	private final Collection<InterceptorListener> listeners = new LinkedList<InterceptorListener>();
+	private final Collection<InterceptorBean> interceptors;
 	
-	public void addInterceptorListener(InterceptorListener listener) {
-		this.listeners.add(listener);
-		for(InterceptorBean interceptor : interceptors) {
-			listener.onBindInterceptor(
-					interceptor.getClassMatcher(),
-					interceptor.getMethodMatcher(),
-					interceptor.getInterceptors());
-		}
+	private InterceptorManager(Collection<InterceptorBean> interceptors) {
+		this.interceptors = new LinkedList<InterceptorBean>(interceptors);
+	}
+	
+	public InterceptorManager() {
+		this.interceptors = new LinkedList<InterceptorBean>();
 	}
 	
 	public Collection<InterceptorBean> getInterceptors() {
@@ -30,8 +27,9 @@ public class InterceptorManager {
 	
 	public void bindInterceptor(Matcher<? super Class<?>> arg0, Matcher<? super Method> arg1, MethodInterceptor... arg2) {	
 		interceptors.add(new InterceptorBean(arg0, arg1, arg2));
-		for(InterceptorListener listener : listeners) {
-			listener.onBindInterceptor(arg0, arg1, arg2);
-		}
+	}
+	
+	public InterceptorManager clone() {
+		return new InterceptorManager(interceptors);
 	}
 }

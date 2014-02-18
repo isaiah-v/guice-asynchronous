@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ivcode.guice.asynchronous.impl.manager;
+package org.ivcode.guice.asynchronous.impl.context;
 
 
 import java.lang.reflect.Method;
@@ -22,8 +22,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.ivcode.guice.asynchronous.AsynchronousContext;
+import org.ivcode.guice.asynchronous.impl.cglib.AsyncTaskException;
 
-public class AsynchronousManager implements AsynchronousContext, Executor, ExceptionListener {
+public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 
     private final ExecutorService executor;
 
@@ -33,7 +34,7 @@ public class AsynchronousManager implements AsynchronousContext, Executor, Excep
 
     private volatile int exceptionsThrown;
 
-    public AsynchronousManager(ExecutorService executor) {
+    public AsynchronousContextImpl(ExecutorService executor) {
         this.executor = executor;
     }
 
@@ -60,7 +61,6 @@ public class AsynchronousManager implements AsynchronousContext, Executor, Excep
     }
 
     public void execute(Runnable command) {
-        startTask();
         executor.execute(new Task(command));
     }
 
@@ -84,7 +84,7 @@ public class AsynchronousManager implements AsynchronousContext, Executor, Excep
         return isShutdown || executor.isShutdown();
     }
 
-    public synchronized void onException(Method method, Throwable th) {
+    private synchronized void onException(Method method, Throwable th) {
         exceptionsThrown++;
     }
 
@@ -93,12 +93,15 @@ public class AsynchronousManager implements AsynchronousContext, Executor, Excep
         private final Runnable task;
 
         public Task(Runnable task) {
+        	startTask();
             this.task = task;
         }
 
         public void run() {
             try {
                 task.run();
+            } catch (AsyncTaskException e) {
+            	onException(e.getMethod(), e.getCause());
             } catch (Throwable th) {
                 onException(null, th);
             } finally {

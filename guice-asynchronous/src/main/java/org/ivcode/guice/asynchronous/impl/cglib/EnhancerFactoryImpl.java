@@ -15,7 +15,6 @@
  */
 package org.ivcode.guice.asynchronous.impl.cglib;
 
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,8 +24,6 @@ import java.util.concurrent.Executor;
 
 import org.ivcode.guice.asynchronous.impl.bindingclass.BindingClass;
 import org.ivcode.guice.asynchronous.impl.bindingclass.BindingMethod;
-import org.ivcode.guice.asynchronous.impl.manager.ExceptionListener;
-
 
 import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.NamingPolicy;
@@ -35,6 +32,8 @@ import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.NoOp;
+import net.sf.cglib.reflect.FastClass;
+import net.sf.cglib.reflect.FastConstructor;
 
 /**
  * Creates asynchronous {@link Enhancer} objects.
@@ -51,11 +50,9 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
     };
     
     private final Executor executor;
-    private final ExceptionListener exceptionListener;
     
-    public EnhancerFactoryImpl(Executor executor, ExceptionListener exceptionListener) {
+    public EnhancerFactoryImpl(Executor executor) {
     	this.executor = executor;
-    	this.exceptionListener = exceptionListener;
     }
 
     /**
@@ -67,7 +64,17 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
      * @return A new asynchronous {@link Enhancer} based on the given
      *         {@link BindingClass}
      */
-    public Enhancer createEnhancer(BindingClass<?> aopClass) {
+    public EnhancerData createEnhancer(BindingClass<?> aopClass) {
+    	
+    	Enhancer enhancer = createEnhancerWithoutCallbacks(aopClass);
+    	Callback[] callbacks = applyTypesAndFilter(enhancer, aopClass);
+    	FastClass fastClass = createFastClass(enhancer.createClass());
+    	FastConstructor fastConstructor = createFastConstructor(fastClass, aopClass.getConstructor().getArgumentTypes());
+        
+        return new EnhancerData(fastConstructor, callbacks);
+	}
+    
+    private Enhancer createEnhancerWithoutCallbacks(BindingClass<?> aopClass) {
     	Class<?> clazz = aopClass.getKey().getTypeLiteral().getRawType();
 
         Enhancer enhancer = new Enhancer();
@@ -76,8 +83,12 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
         enhancer.setSuperclass(clazz);
         enhancer.setUseFactory(false);
         enhancer.setClassLoader(clazz.getClassLoader());
-
-        Map<Method, Integer> filterMap = new HashMap<Method, Integer>();
+        
+        return enhancer;
+    }
+    
+    private Callback[] applyTypesAndFilter(Enhancer enhancer, BindingClass<?> aopClass) {
+    	Map<Method, Integer> filterMap = new HashMap<Method, Integer>();
         List<Callback> callbackList = new ArrayList<Callback>();
 
         @SuppressWarnings("rawtypes")
@@ -93,7 +104,7 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
             List<org.aopalliance.intercept.MethodInterceptor> interceptors = method.getInterceptors();
 
             MethodInterceptor mi = interceptors == null ? new DirectInterceptor() : new InterceptorStackCallback(method.getMethod(), interceptors);
-            if (method.isAsynchronous()) mi = new AsynchronusInterceptor(executor, exceptionListener, mi);
+            if (method.isAsynchronous()) mi = new AsynchronusInterceptor(executor, mi);
 
             boolean b1 = callbackList.add(mi);
             boolean b2 = typeList.add(MethodInterceptor.class);
@@ -111,12 +122,24 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
         @SuppressWarnings("rawtypes")
         Class[] callbackTypes = typeList.toArray(new Class[typeList.size()]);
 
-        enhancer.setCallbackFilter(callbackFilter);
-        enhancer.setCallbacks(callbacks);
         enhancer.setCallbackTypes(callbackTypes);
-
-        return enhancer;
-	}
+        enhancer.setCallbackFilter(callbackFilter);
+        
+        return callbacks;
+    }
+    
+    private FastClass createFastClass(Class<?> type) {
+    	FastClass.Generator g = new FastClass.Generator();
+    	g.setType(type);
+    	g.setClassLoader(type.getClassLoader());
+    	g.setNamingPolicy(ASYNCHRONOUS_NAMING_POLICY);
+    	
+    	return g.create();
+    }
+    
+    private <T> FastConstructor createFastConstructor(FastClass fastClass, Class<?>[] argumentTypes) {
+    	return fastClass.getConstructor(argumentTypes);
+    }
 
     /**
      * The {@link Callback} asynchronous {@link Enhancer}'s
