@@ -86,8 +86,8 @@ public class GuiceAsyncUtils {
 	 * 
 	 * @return The default executor service
 	 */
-	public static ExecutorService createDefaultExecutor(Annotation annotation) {
-		ThreadFactory threadFactory = new MyThreadFactory(THREAD_NAME_PREFIX + " : " + (annotation == null ? "" : (annotation.toString() + " : ")), true);
+	public static ExecutorService createDefaultExecutor() {
+		ThreadFactory threadFactory = new MyThreadFactory(THREAD_NAME_PREFIX + " : ", true);
 		return Executors.newCachedThreadPool(threadFactory);
 	}
 }

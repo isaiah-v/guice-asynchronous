@@ -3,7 +3,6 @@ package org.ivcode.guice.asynchronous;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 import org.ivcode.guice.asynchronous.impl.binder.AsynchronousBinderManager;
 import org.ivcode.guice.asynchronous.impl.bindingclass.BindingClassFactory;
@@ -14,7 +13,6 @@ import org.ivcode.guice.asynchronous.impl.context.AsynchronousContextImpl;
 import org.ivcode.guice.asynchronous.impl.recorder.AsynchronousBindingProcessor;
 import org.ivcode.guice.asynchronous.impl.recorder.AsynchronousBindingProcessorImpl;
 import org.ivcode.guice.asynchronous.impl.utils.ClassPreloader;
-import org.ivcode.guice.asynchronous.impl.utils.GuiceAsyncUtils;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -34,76 +32,16 @@ import com.google.inject.spi.TypeListener;
 
 public abstract class AsynchronousModule implements Module {
 
-	private final boolean isBindContext;
-	private final Annotation annotation;
-
-	private final AsynchronousContext context;
-
 	private final AsynchronousBinderManager bindingManager;
+	
+	private AsynchronousContext context;
 	private AsynchronousBinder rootBinder;
 	
 
-	/**
-	 * Creates a new {@link AsynchronousModule}<br/>
-	 * <br/>
-	 * This constructor will result in a new {@link AsynchronousContext} using
-	 * an new cached thread-pool and being bound without a binding annotation.
-	 */
 	public AsynchronousModule() {
-		this(null, null);
+		this(new AsynchronousContextImpl());
 	}
 
-	/**
-	 * Creates a new {@link AsynchronousModule}<br/>
-	 * <br/>
-	 * This constructor will result in a new {@link AsynchronousContext} using
-	 * the given thread-pool and being bound without a binding annotation.
-	 * 
-	 * @param executor
-	 *            The given thread-pool. The guice-asynchronous service will
-	 *            assume control over this {@link ExecutorService} and will
-	 *            handle shuitting it down.
-	 */
-	public AsynchronousModule(ExecutorService executor) {
-		this(executor, null);
-	}
-
-	/**
-	 * Creates a new {@link AsynchronousModule}<br/>
-	 * <br/>
-	 * This constructor will result in a new {@link AsynchronousContext} using
-	 * an new cached thread-pool and being bound with the given binding annotation.
-	 * 
-	 * @param annotation
-	 *            The binding annotation
-	 */
-	public AsynchronousModule(Annotation annotation) {
-		this(null, annotation);
-	}
-
-	/**
-	 * Creates a new {@link AsynchronousModule}<br/>
-	 * <br/>
-	 * This constructor will result in a new {@link AsynchronousContext} using
-	 * the given thread-pool and being bound with the given binding annotation.
-	 * 
-	 * @param executor
-	 *            The given thread-pool. The guice-asynchronous service will
-	 *            assume control over this {@link ExecutorService} and will
-	 *            handle shuitting it down.
-	 * @param annotation
-	 *            the binding annotation
-	 */
-	public AsynchronousModule(ExecutorService executor, Annotation annotation) {
-		ExecutorService myExecutor = executor == null ? GuiceAsyncUtils.createDefaultExecutor(annotation) : executor;
-		AsynchronousContextImpl context = new AsynchronousContextImpl(myExecutor);
-		
-		this.annotation = annotation;
-		this.context = context;
-		this.isBindContext = true;
-		this.bindingManager = createAsynchronousBinderManager(context.getExecutor());
-	}
-	
 	/**
 	 * Creates a new {@link AsynchronousModule}<br/>
 	 * <br/>
@@ -115,33 +53,23 @@ public abstract class AsynchronousModule implements Module {
 	 *            parent context
 	 */
 	public AsynchronousModule(AsynchronousContext context) {
-		this(context, false);
-	}
-	
-	public AsynchronousModule(AsynchronousModule module) {
-		this(module.getContext(), false);
-	}
-	
-	private  AsynchronousModule(AsynchronousContext context, boolean isBindContext) {
+		if(context==null || context.isShutdown() || context.getExecutor()==null) {
+			throw new IllegalArgumentException("invalid context");
+		}
+		
 		this.context = context;
-		this.isBindContext = isBindContext;
-		this.annotation = null;
-		this.bindingManager = createAsynchronousBinderManager(context.getExecutor());
+		this.bindingManager = new AsynchronousBinderManager();
 	}
 	
 	/**
-	 * Polls this module's context
-	 * @return
-	 * 		this module's context
+	 * Configures a {@link AsynchronousBinder} via the exposed methods.
 	 */
-	public AsynchronousContext getContext() {
-		return context;
-	}
+	protected abstract void configure() throws Exception;
 	
 	public final void configure(Binder binder) {
 		configure(bindingManager.createAsynchronousBinder(binder));
 	}
-
+	
 	private final void configure(AsynchronousBinder binder) {
 		synchronized (this) {
 			if (this.rootBinder != null) {
@@ -162,30 +90,6 @@ public abstract class AsynchronousModule implements Module {
 		}
 	}
 	
-	private AsynchronousBinderManager createAsynchronousBinderManager(Executor executor) {
-		final BindingClassFactory bindingClassFactory = new BindingClassFactoryImpl();
-		final EnhancerFactory enhancerFactory = new EnhancerFactoryImpl(executor);
-		final AsynchronousBindingProcessor bindingProcessor = new AsynchronousBindingProcessorImpl(bindingClassFactory, enhancerFactory);
-		final AsynchronousBinderManager bindingManager = new AsynchronousBinderManager(bindingProcessor);
-		
-		return bindingManager;
-	}
-
-	private void processAsynchronousBindings() {
-		bindingManager.build();
-		bindContext();
-	}
-	
-	private void bindContext() {
-		if(!isBindContext) { return; }
-		
-		if (annotation != null) {
-			binder().bind(Key.get(AsynchronousContext.class, annotation)).toInstance(context);
-		} else {
-			binder().bind(Key.get(AsynchronousContext.class)).toInstance(context);
-		}
-	}
-
 	private synchronized void init(AsynchronousBinder binder) {
 		this.rootBinder = binder;
 	}
@@ -194,10 +98,34 @@ public abstract class AsynchronousModule implements Module {
 		this.rootBinder = null;
 	}
 	
-	/**
-	 * Configures a {@link Binder} via the exposed methods.
-	 */
-	protected abstract void configure() throws Exception;
+	private void processAsynchronousBindings() {
+		bindingManager.build(createAsynchronousBindingProcessor(context.getExecutor()));
+	}
+	
+	// TODO move to factory
+	private AsynchronousBindingProcessor createAsynchronousBindingProcessor(Executor executor) {
+		final BindingClassFactory bindingClassFactory = new BindingClassFactoryImpl();
+		final EnhancerFactory enhancerFactory = new EnhancerFactoryImpl(executor);
+		final AsynchronousBindingProcessor bindingProcessor = new AsynchronousBindingProcessorImpl(bindingClassFactory, enhancerFactory);
+		
+		return bindingProcessor;
+	}
+	
+	protected AsynchronousBinder binder() {
+		return rootBinder;
+	}
+	
+	public AsynchronousContext getContext() {
+		return context;
+	}
+	
+	protected void bindContext() {
+		binder().bind(AsynchronousContext.class).toInstance(context);
+	}
+	
+	protected void bindContext(Key<AsynchronousContext> key) {
+		binder().bind(key).toInstance(context);
+	}
 
 	/**
 	 * Creates an asynchronous binding
@@ -224,10 +152,6 @@ public abstract class AsynchronousModule implements Module {
 	 */
 	protected <T> AsynchronousBindingBuilder<T> bindAsynchronous(Key<T> key) {
 		return binder().bindAsynchronous(key);
-	}
-	
-	protected AsynchronousBinder binder() {
-		return rootBinder;
 	}
 
 	/**
@@ -312,9 +236,7 @@ public abstract class AsynchronousModule implements Module {
 	 *      com.google.inject.matcher.Matcher,
 	 *      org.aopalliance.intercept.MethodInterceptor[])
 	 */
-	protected void bindInterceptor(Matcher<? super Class<?>> classMatcher,
-			Matcher<? super Method> methodMatcher,
-			org.aopalliance.intercept.MethodInterceptor... interceptors) {
+	protected void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, org.aopalliance.intercept.MethodInterceptor... interceptors) {
 		binder().bindInterceptor(classMatcher, methodMatcher, interceptors);
 	}
 
@@ -355,8 +277,7 @@ public abstract class AsynchronousModule implements Module {
 	/**
 	 * @see Binder#convertToTypes
 	 */
-	protected void convertToTypes(Matcher<? super TypeLiteral<?>> typeMatcher,
-			TypeConverter converter) {
+	protected void convertToTypes(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter converter) {
 		binder().convertToTypes(typeMatcher, converter);
 	}
 

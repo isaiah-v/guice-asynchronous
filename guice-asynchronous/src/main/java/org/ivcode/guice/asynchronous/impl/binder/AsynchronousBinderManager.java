@@ -20,14 +20,8 @@ import com.google.inject.matcher.Matcher;
 
 public class AsynchronousBinderManager {
 	
-	private final AsynchronousBindingProcessor bindingProcessor;
-	
 	private final List<AsynchronousBindingBean<?>> asyncBindings = new LinkedList<AsynchronousBindingBean<?>>();
 	private boolean isClosed;
-	
-	public AsynchronousBinderManager(AsynchronousBindingProcessor bindingProcessor) {
-		this.bindingProcessor = bindingProcessor;
-	}
 	
 	public AsynchronousBinder createAsynchronousBinder(Binder binder) {
 		return createAsynchronousBinder(binder, new InterceptorManager());
@@ -59,7 +53,7 @@ public class AsynchronousBinderManager {
 		return abb;
 	}
 	
-	public void build() {
+	public void build(AsynchronousBindingProcessor bindingProcessor) {
 		synchronized(this) {
 			if(isClosed) { return; }
 			isClosed = true;

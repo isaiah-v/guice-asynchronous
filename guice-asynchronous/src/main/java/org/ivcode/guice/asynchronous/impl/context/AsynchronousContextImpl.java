@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.ivcode.guice.asynchronous.AsynchronousContext;
 import org.ivcode.guice.asynchronous.impl.cglib.AsyncTaskException;
+import org.ivcode.guice.asynchronous.impl.utils.GuiceAsyncUtils;
 
 public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 
@@ -34,7 +35,15 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 
     private volatile int exceptionsThrown;
 
+    public AsynchronousContextImpl() {
+    	this(GuiceAsyncUtils.createDefaultExecutor());
+    }
+    
     public AsynchronousContextImpl(ExecutorService executor) {
+    	if(executor==null || executor.isShutdown()) {
+    		throw new IllegalArgumentException("invalid executor");
+    	}
+    	
         this.executor = executor;
     }
 
@@ -44,6 +53,10 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 
     private synchronized void endTask() {
         if (++tasksCompleted >= tasksStarted && isShutdown) this.notifyAll();
+    }
+    
+    private synchronized void onException(Method method, Throwable th) {
+        exceptionsThrown++;
     }
 
     public void shutdown() throws InterruptedException {
@@ -83,9 +96,14 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
     public boolean isShutdown() {
         return isShutdown || executor.isShutdown();
     }
+    
+    public void shutdownNow() {
+        synchronized (this) {
+            if (this.isShutdown) return;
 
-    private synchronized void onException(Method method, Throwable th) {
-        exceptionsThrown++;
+            this.isShutdown = true;
+            this.executor.shutdownNow();
+        }
     }
 
     public final class Task implements Runnable {
@@ -107,15 +125,6 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
             } finally {
                 endTask();
             }
-        }
-    }
-
-    public void shutdownNow() {
-        synchronized (this) {
-            if (this.isShutdown) return;
-
-            this.isShutdown = true;
-            this.executor.shutdownNow();
         }
     }
 }
