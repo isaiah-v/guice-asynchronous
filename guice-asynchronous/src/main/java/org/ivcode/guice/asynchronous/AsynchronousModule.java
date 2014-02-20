@@ -4,15 +4,16 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 
-import org.ivcode.guice.asynchronous.impl.binder.AsynchronousBinderManager;
-import org.ivcode.guice.asynchronous.impl.bindingclass.BindingClassFactory;
-import org.ivcode.guice.asynchronous.impl.bindingclass.BindingClassFactoryImpl;
-import org.ivcode.guice.asynchronous.impl.cglib.EnhancerFactory;
-import org.ivcode.guice.asynchronous.impl.cglib.EnhancerFactoryImpl;
-import org.ivcode.guice.asynchronous.impl.context.AsynchronousContextImpl;
-import org.ivcode.guice.asynchronous.impl.recorder.AsynchronousBindingProcessor;
-import org.ivcode.guice.asynchronous.impl.recorder.AsynchronousBindingProcessorImpl;
-import org.ivcode.guice.asynchronous.impl.utils.ClassPreloader;
+import org.ivcode.guice.asynchronous.context.AsynchronousContext;
+import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
+import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactory;
+import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactoryImpl;
+import org.ivcode.guice.asynchronous.internal.binder.AsynchronousBinderManager;
+import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactory;
+import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactoryImpl;
+import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingProcessor;
+import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingProcessorImpl;
+import org.ivcode.guice.asynchronous.internal.utils.ClassPreloader;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -104,7 +105,7 @@ public abstract class AsynchronousModule implements Module {
 	
 	// TODO move to factory
 	private AsynchronousBindingProcessor createAsynchronousBindingProcessor(Executor executor) {
-		final BindingClassFactory bindingClassFactory = new BindingClassFactoryImpl();
+		final AsynchronousClassFactory bindingClassFactory = new AsynchronousClassFactoryImpl();
 		final EnhancerFactory enhancerFactory = new EnhancerFactoryImpl(executor);
 		final AsynchronousBindingProcessor bindingProcessor = new AsynchronousBindingProcessorImpl(bindingClassFactory, enhancerFactory);
 		

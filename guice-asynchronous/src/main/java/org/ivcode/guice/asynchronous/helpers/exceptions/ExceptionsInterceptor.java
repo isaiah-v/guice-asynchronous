@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.ivcode.guice.asynchronous.helpers.callbacks.Callback;
-import org.ivcode.guice.asynchronous.impl.cglib.StacktracePruner;
+import org.ivcode.guice.asynchronous.internal.proxy.StacktracePruner;
 
 
 /**
