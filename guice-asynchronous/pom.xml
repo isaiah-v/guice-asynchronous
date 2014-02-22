@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>iv.guice</groupId>
+	<groupId>org.ivcode.guice</groupId>
 	<artifactId>guice-asynchronous</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
@@ -89,7 +89,7 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.9</version>
 				<configuration>
-					<excludePackageNames>com.google.*:iv.guice.asynchronous.impl.*</excludePackageNames>
+					<excludePackageNames>com.google.*:org.ivcode.guice.asynchronous.internal.*</excludePackageNames>
 				</configuration>
 				<executions>
 					<execution>

@@ -23,7 +23,7 @@ import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
 import org.ivcode.guice.asynchronous.internal.binder.AsynchronousBinderManager;
 import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessorFactory;
 import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessorFactoryImpl;
-import org.ivcode.guice.asynchronous.internal.utils.ClassPreloader;
+import org.ivcode.guice.asynchronous.internal.utils.InternalClasses;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -93,7 +93,7 @@ public abstract class AsynchronousModule implements Module {
 		}
 
 		try {
-			ClassPreloader.loadAsynchronousClasses();
+			InternalClasses.loadInternalClasses();
 			
 			configure();
 			buildAsynchronousBindings();

@@ -19,15 +19,30 @@ import java.lang.reflect.Type;
 
 import com.google.inject.util.Types;
 
+/**
+ * A
+ * 
+ * @author Isaiah van der Elst
+ */
 public class TypeLiteralFactory {
-    public static <T> TypeLiteral<T> createParameterizedTypeLiteral(Type rawType, Type... typeArguments) {
-        // operation is not type safe (be careful)
-        Type t = Types.newParameterizedType(rawType, typeArguments);
-        return new TypeLiteral<T>(t);
-    }
 
-	@Override
-	public String toString() {
-		return "TypeLiteralFactory";
+	private TypeLiteralFactory() {
+	}
+
+	/**
+	 * Creates a {@link TypeLiteral} that's of the given type ({@code rawType})
+	 * and containing the given generic types ({@code typeArguments})
+	 * 
+	 * @param rawType
+	 *            The type literal type
+	 * @param typeArguments
+	 *            The type arguments (generic types)
+	 * @return a {@link TypeLiteral} that's of the given type ({@code rawType})
+	 *         and containing the given generic types ({@code typeArguments})
+	 */
+	public static <T> TypeLiteral<T> createParameterizedTypeLiteral(Type rawType, Type... typeArguments) {
+		// operation is not type safe (be careful)
+		Type t = Types.newParameterizedType(rawType, typeArguments);
+		return new TypeLiteral<T>(t);
 	}
 }

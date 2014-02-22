@@ -49,14 +49,14 @@ public final class InterceptorStackCallback implements net.sf.cglib.proxy.Method
 				+ Arrays.toString(interceptors) + ", method=" + method + "]";
 	}
 
-	class InterceptedMethodInvocation implements MethodInvocation {
+	private class InterceptedMethodInvocation implements MethodInvocation {
 
         final Object proxy;
         final Object[] arguments;
         final MethodProxy methodProxy;
         int index = -1;
 
-        public InterceptedMethodInvocation(Object proxy, MethodProxy methodProxy, Object[] arguments) {
+        private InterceptedMethodInvocation(Object proxy, MethodProxy methodProxy, Object[] arguments) {
             this.proxy = proxy;
             this.methodProxy = methodProxy;
             this.arguments = arguments;

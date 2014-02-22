@@ -113,13 +113,11 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 				+ ", exceptionsThrown=" + exceptionsThrown + "]";
 	}
 
-
-
-	public final class Task implements Runnable {
+	private final class Task implements Runnable {
 
         private final Runnable task;
 
-        public Task(Runnable task) {
+        private Task(Runnable task) {
         	startTask();
             this.task = task;
         }

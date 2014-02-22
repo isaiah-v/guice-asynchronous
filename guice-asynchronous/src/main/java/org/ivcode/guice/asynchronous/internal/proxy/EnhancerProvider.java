@@ -31,26 +31,29 @@ import com.google.inject.Provider;
 /**
  * A {@link Provider} that wraps the {@link Enhancer}
  * 
- * @author isaiah
+ * @author Isaiah van der Elst
  * 
  * @param <T>
  *            The provider type
  */
 public class EnhancerProvider<T> implements AssistedProvider<T> {
-
-    /** injects the members into the instance variable */
-    @Inject
-    private MembersInjector<T> membersInjector;
+	
+    private final FastConstructor fastConstructor;
     
-    @Inject
-    FastConstructor fastConstructor;
+    private final Callback[] callbacks;
     
-    @Inject
-    Callback[] callbacks;
-    
-    @Inject
     @SuppressWarnings("rawtypes")
-    private Provider[] providers;
+    private final Provider[] providers;
+    
+    private final MembersInjector<T> membersInjector;
+    
+    @Inject
+    public EnhancerProvider(FastConstructor fastConstructor, Callback[] callbacks, @SuppressWarnings("rawtypes") Provider[] providers, MembersInjector<T> membersInjector) {
+    	this.fastConstructor = fastConstructor;
+    	this.callbacks = callbacks;
+    	this.providers = providers;
+    	this.membersInjector = membersInjector;
+    }
 
     public T get() {
         return injectMembers(createInstance());

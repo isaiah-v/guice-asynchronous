@@ -17,25 +17,29 @@ package org.ivcode.guice.asynchronous.internal.proxy;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
-import org.ivcode.guice.asynchronous.internal.proxy.InterceptorStackCallback.InterceptedMethodInvocation;
-
-import net.sf.cglib.proxy.MethodProxy;
+import org.ivcode.guice.asynchronous.internal.utils.InternalClasses;
 
 public class StacktracePruner {
 
+    private static final Set<String> AOP_INTERNAL_CLASSES;
+    
+    static {
+    	Set<String> names = new HashSet<String>();
+    	
+    	for(Class<?> clazz : InternalClasses.getInternalClasses()) {
+    		names.add(clazz.getName());
+    	}
+    	
+    	AOP_INTERNAL_CLASSES = names;
+    }
+    
     private StacktracePruner() {
     }
-
-    private static final Set<String> AOP_INTERNAL_CLASSES = new HashSet<String>(Arrays.asList(InterceptorStackCallback.class.getName(), InterceptedMethodInvocation.class.getName(),
-            MethodProxy.class.getName(), AsynchronusInterceptor.class.getName(), AsynchronusInterceptor.TaskExecutor.class.getName(), DirectInterceptor.class.getName(),
-            AsynchronousContextImpl.class.getName(), AsynchronousContextImpl.Task.class.getName()));
-
+    
     /**
      * Removes stacktrace elements related to AOP internal mechanics from the
      * throwable's stack trace and any causes it may have.

@@ -17,6 +17,11 @@ package org.ivcode.guice.asynchronous;
 
 import com.google.inject.PrivateBinder;
 
+/**
+ * An extention to the {@link PrivateBinder} interface that's also used to bind asynchronous classes
+ * 
+ * @author Isaiah van der Elst
+ */
 public interface AsynchronousPrivateBinder extends AsynchronousBinder, PrivateBinder {
 	public AsynchronousPrivateBinder skipSources(@SuppressWarnings("rawtypes") Class... classesToSkip);
 	public AsynchronousPrivateBinder withSource(Object source);

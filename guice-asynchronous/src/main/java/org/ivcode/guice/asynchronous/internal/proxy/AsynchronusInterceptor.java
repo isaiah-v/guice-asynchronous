@@ -23,12 +23,12 @@ import java.util.concurrent.Executor;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-class AsynchronusInterceptor implements MethodInterceptor {
+public class AsynchronusInterceptor implements MethodInterceptor {
 
     private final Executor executor;
     private final MethodInterceptor methodInterceptor;
 
-    public AsynchronusInterceptor(Executor executor, MethodInterceptor methodInterceptor) {
+    AsynchronusInterceptor(Executor executor, MethodInterceptor methodInterceptor) {
         this.executor = executor;
         this.methodInterceptor = methodInterceptor;
     }
@@ -46,14 +46,14 @@ class AsynchronusInterceptor implements MethodInterceptor {
 				+ ", methodInterceptor=" + methodInterceptor + "]";
 	}
     
-	class TaskExecutor implements Runnable {
+	private class TaskExecutor implements Runnable {
         
         final Object obj;
         final Method method;
         final Object[] args;
         final MethodProxy proxy;
 
-        public TaskExecutor(Object obj, Method method, Object[] args, MethodProxy proxy) {
+        private TaskExecutor(Object obj, Method method, Object[] args, MethodProxy proxy) {
             this.obj = obj;
             this.method = method;
             this.args = args;
