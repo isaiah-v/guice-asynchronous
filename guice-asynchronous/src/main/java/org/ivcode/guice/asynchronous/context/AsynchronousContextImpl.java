@@ -104,8 +104,18 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
             this.executor.shutdownNow();
         }
     }
+    
+    @Override
+	public String toString() {
+		return "AsynchronousContextImpl [executor=" + executor
+				+ ", tasksStarted=" + tasksStarted + ", tasksCompleted="
+				+ tasksCompleted + ", isShutdown=" + isShutdown
+				+ ", exceptionsThrown=" + exceptionsThrown + "]";
+	}
 
-    public final class Task implements Runnable {
+
+
+	public final class Task implements Runnable {
 
         private final Runnable task;
 
@@ -125,5 +135,10 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
                 endTask();
             }
         }
+
+		@Override
+		public String toString() {
+			return "Task [task=" + task + "]";
+		}
     }
 }

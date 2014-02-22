@@ -38,40 +38,40 @@ import com.google.inject.Provider;
 
 public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
 	
-	public <T> AsynchronousClass<T> getBindingClass(Key<T> key, Constructor<? extends T> constructor, Collection<InterceptorElement> interceptors) {
+	public <T> AsynchronousClass<T> createAsynchronousClass(Key<T> key, Constructor<? extends T> constructor, Collection<InterceptorElement> interceptors) {
 		if(!isAsyncClass(key)) {
 			throw new IllegalArgumentException("class contains no asychornous annotations");
 		}
 		
-		AsynchronousConstructor bconstructor = getAopConstructor(key, constructor);
-		AsynchronousMethod[] methods = getAopMethods(key, interceptors);
+		AsynchronousConstructor aconstructor = createAsynchronousConstructor(key, constructor);
+		AsynchronousMethod[] methods = createAsynchronousMethod(key, interceptors);
 		
-		return createAopClass(key, bconstructor, methods);
+		return createAsynchronousClass(key, aconstructor, methods);
 	}
     
     
-    private AsynchronousConstructor getAopConstructor(Key<?> key, Constructor<?> c) {
+    private AsynchronousConstructor createAsynchronousConstructor(Key<?> key, Constructor<?> c) {
         Class<?> clazz = getRawType(key);
         
-        AsynchronousConstructor aopConstructor = null;
+        AsynchronousConstructor asyncConstructor = null;
         if(c!=null) {
-            aopConstructor = getAopConstructor(c);
+            asyncConstructor = createAsynchronousConstructor(c);
         } else {
-            aopConstructor = getAopConstructor(clazz);
+            asyncConstructor = createAsynchronousConstructor(clazz);
         }
         
-        return aopConstructor==null ? getAopConstructor() : aopConstructor;
+        return asyncConstructor==null ? createAsynchronousConstructor() : asyncConstructor;
     }
     
-    private AsynchronousConstructor getAopConstructor() {
-        AsynchronousConstructor aopConstructor = new AsynchronousConstructor();
-        aopConstructor.setArgumentTypes(new Class[0]);
-        aopConstructor.setArgumentKeys(new Key[0]);
+    private AsynchronousConstructor createAsynchronousConstructor() {
+        AsynchronousConstructor asyncConstructor = new AsynchronousConstructor();
+        asyncConstructor.setArgumentTypes(new Class[0]);
+        asyncConstructor.setArgumentKeys(new Key[0]);
         
-        return aopConstructor;
+        return asyncConstructor;
     }
     
-    private AsynchronousConstructor getAopConstructor(Class<?> clazz) {
+    private AsynchronousConstructor createAsynchronousConstructor(Class<?> clazz) {
         Constructor<?> c = findInjectConstructor(clazz);
         if(c==null) return null;
         
@@ -81,35 +81,35 @@ public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
         Provider<?>[] provider = new Provider[argumentTypes.length];
         for(int i=0; i<provider.length; i++) {
             Class<?> argclazz = argumentTypes[i];
-            Key<?> key = getKey(argclazz, c.getParameterAnnotations()[i]);
+            Key<?> key = createKey(argclazz, c.getParameterAnnotations()[i]);
             
             argumentKeys[i] = key;
         }
         
-        AsynchronousConstructor aopConstructor = new AsynchronousConstructor();
-        aopConstructor.setArgumentTypes(argumentTypes);
-        aopConstructor.setArgumentKeys(argumentKeys);
+        AsynchronousConstructor asyncConstructor = new AsynchronousConstructor();
+        asyncConstructor.setArgumentTypes(argumentTypes);
+        asyncConstructor.setArgumentKeys(argumentKeys);
         
-        return aopConstructor;
+        return asyncConstructor;
     }
     
-    private AsynchronousConstructor getAopConstructor(Constructor<?> c) {
+    private AsynchronousConstructor createAsynchronousConstructor(Constructor<?> c) {
     	Class<?>[] argumentTypes = c.getParameterTypes();
         Key<?>[] argumentKeys = new Key[argumentTypes.length];
         
         for(int i=0; i<argumentTypes.length; i++) {
-        	Key<?> key = getKey(argumentTypes[i], c.getParameterAnnotations()[i]);
+        	Key<?> key = createKey(argumentTypes[i], c.getParameterAnnotations()[i]);
             argumentKeys[i] = key;
         }
         
-        AsynchronousConstructor aopConstructor = new AsynchronousConstructor();
-        aopConstructor.setArgumentTypes(argumentTypes);
-        aopConstructor.setArgumentKeys(argumentKeys);
+        AsynchronousConstructor asyncConstructor = new AsynchronousConstructor();
+        asyncConstructor.setArgumentTypes(argumentTypes);
+        asyncConstructor.setArgumentKeys(argumentKeys);
         
-        return aopConstructor;
+        return asyncConstructor;
     }
     
-    private <T> Key<T> getKey(Class<T> clazz, Annotation[] annotations) {
+    private <T> Key<T> createKey(Class<T> clazz, Annotation[] annotations) {
         Annotation a = findBindingAnnotation(annotations);
         if(a!=null) {
             return Key.get(clazz, a);
@@ -118,7 +118,7 @@ public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
         }
     }
     
-    private AsynchronousMethod[] getAopMethods(Key<?> key, Collection<InterceptorElement> interceptors) {
+    private AsynchronousMethod[] createAsynchronousMethod(Key<?> key, Collection<InterceptorElement> interceptors) {
         if (key == null) return null;
         Class<?> clazz = getRawType(key);
 
@@ -165,12 +165,18 @@ public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
         }
     }
     
-    private <T> AsynchronousClass<T> createAopClass(Key<T> key, AsynchronousConstructor constructor, AsynchronousMethod[] methods) {
-        AsynchronousClass<T> aopClass = new AsynchronousClass<T>();
-        aopClass.setKey(key);
-        aopClass.setConstructor(constructor);
-        aopClass.setMethods(methods);
+    private <T> AsynchronousClass<T> createAsynchronousClass(Key<T> key, AsynchronousConstructor constructor, AsynchronousMethod[] methods) {
+        AsynchronousClass<T> asyncClass = new AsynchronousClass<T>();
+        asyncClass.setKey(key);
+        asyncClass.setConstructor(constructor);
+        asyncClass.setMethods(methods);
 
-        return aopClass;
+        return asyncClass;
     }
+
+
+	@Override
+	public String toString() {
+		return "AsynchronousClassFactoryImpl";
+	}
 }

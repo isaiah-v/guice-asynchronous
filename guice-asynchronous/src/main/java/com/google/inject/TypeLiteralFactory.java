@@ -25,4 +25,9 @@ public class TypeLiteralFactory {
         Type t = Types.newParameterizedType(rawType, typeArguments);
         return new TypeLiteral<T>(t);
     }
+
+	@Override
+	public String toString() {
+		return "TypeLiteralFactory";
+	}
 }

@@ -203,4 +203,10 @@ public class FutureCallback<T> implements Future<T>, Callback<T> {
 
         return result;
     }
+
+	@Override
+	public String toString() {
+		return "FutureCallback [lock=" + lock + ", result=" + result
+				+ ", throwable=" + throwable + ", isDone=" + isDone + "]";
+	}
 }

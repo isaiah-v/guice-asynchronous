@@ -1,18 +1,28 @@
+/**
+ * Copyright (C) 2013 Isaiah van der Elst (isaiah.vanderelst@gmail.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.ivcode.guice.asynchronous;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.concurrent.Executor;
 
 import org.ivcode.guice.asynchronous.context.AsynchronousContext;
 import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
-import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactory;
-import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactoryImpl;
 import org.ivcode.guice.asynchronous.internal.binder.AsynchronousBinderManager;
-import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactory;
-import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactoryImpl;
-import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingProcessor;
-import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingProcessorImpl;
+import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessorFactory;
+import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessorFactoryImpl;
 import org.ivcode.guice.asynchronous.internal.utils.ClassPreloader;
 
 import com.google.inject.Binder;
@@ -34,8 +44,10 @@ import com.google.inject.spi.TypeListener;
 public abstract class AsynchronousModule implements Module {
 
 	private final AsynchronousBinderManager bindingManager;
+	private final AsynchronousBindingProcessorFactory processorFactory;
 	
-	private AsynchronousContext context;
+	private final AsynchronousContext context;
+	
 	private AsynchronousBinder rootBinder;
 	
 
@@ -60,6 +72,7 @@ public abstract class AsynchronousModule implements Module {
 		
 		this.context = context;
 		this.bindingManager = new AsynchronousBinderManager();
+		this.processorFactory = new AsynchronousBindingProcessorFactoryImpl();
 	}
 	
 	/**
@@ -83,8 +96,8 @@ public abstract class AsynchronousModule implements Module {
 			ClassPreloader.loadAsynchronousClasses();
 			
 			configure();
-			processAsynchronousBindings();
-		} catch (Exception e) {
+			buildAsynchronousBindings();
+		} catch (Throwable e) {
 			binder.addError(e);
 		} finally {
 			destroy();
@@ -99,17 +112,8 @@ public abstract class AsynchronousModule implements Module {
 		this.rootBinder = null;
 	}
 	
-	private void processAsynchronousBindings() {
-		bindingManager.build(createAsynchronousBindingProcessor(context.getExecutor()));
-	}
-	
-	// TODO move to factory
-	private AsynchronousBindingProcessor createAsynchronousBindingProcessor(Executor executor) {
-		final AsynchronousClassFactory bindingClassFactory = new AsynchronousClassFactoryImpl();
-		final EnhancerFactory enhancerFactory = new EnhancerFactoryImpl(executor);
-		final AsynchronousBindingProcessor bindingProcessor = new AsynchronousBindingProcessorImpl(bindingClassFactory, enhancerFactory);
-		
-		return bindingProcessor;
+	private void buildAsynchronousBindings() {
+		bindingManager.build(processorFactory.createAsynchronousBindingProcessor(context.getExecutor()));
 	}
 	
 	protected AsynchronousBinder binder() {

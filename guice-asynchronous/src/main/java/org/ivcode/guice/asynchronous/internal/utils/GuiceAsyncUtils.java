@@ -90,4 +90,9 @@ public class GuiceAsyncUtils {
 		ThreadFactory threadFactory = new MyThreadFactory(THREAD_NAME_PREFIX + " : ", true);
 		return Executors.newCachedThreadPool(threadFactory);
 	}
+
+	@Override
+	public String toString() {
+		return "GuiceAsyncUtils";
+	}
 }

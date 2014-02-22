@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ivcode.guice.asynchronous.internal.proxy;
+package org.ivcode.guice.asynchronous.internal.binding;
 
-import java.lang.reflect.Method;
+import java.lang.annotation.Annotation;
 
-public class AsyncTaskException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+import com.google.inject.binder.ScopedBindingBuilder;
+
+public class AnnotationScopeBinding implements ScopeBinding {
+
+	private final Class<? extends Annotation> scopeClass;
 	
-	private final Method method;
-	
-	public AsyncTaskException(Method method, Throwable cause) {
-		super("Uncaught Exception : Method="+method.getName(), cause);
-		this.method = method;
+	public AnnotationScopeBinding(Class<? extends Annotation> scopeClass) {
+		this.scopeClass = scopeClass;
 	}
 	
-	public Method getMethod() {
-		return method;
+	public void applyTo(ScopedBindingBuilder scopedBindingBuilder) {
+		scopedBindingBuilder.in(scopeClass);
+	}
+
+	@Override
+	public String toString() {
+		return "AnnotationScopeBinding [scopeClass=" + scopeClass + "]";
 	}
 }

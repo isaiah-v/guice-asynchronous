@@ -18,4 +18,10 @@ package org.ivcode.guice.asynchronous.internal.proxy;
 import net.sf.cglib.proxy.NoOp;
 
 class BasicNoOp implements NoOp {
+
+	@Override
+	public String toString() {
+		return "BasicNoOp";
+	}
+	
 }

@@ -25,4 +25,9 @@ class DirectInterceptor implements MethodInterceptor {
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
         return proxy.invokeSuper(obj, args);
     }
+
+	@Override
+	public String toString() {
+		return "DirectInterceptor";
+	}
 }

@@ -17,6 +17,7 @@ package org.ivcode.guice.asynchronous.internal.proxy;
 
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.concurrent.Executor;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -39,7 +40,13 @@ class AsynchronusInterceptor implements MethodInterceptor {
         return null;
     }
     
-    class TaskExecutor implements Runnable {
+    @Override
+	public String toString() {
+		return "AsynchronusInterceptor [executor=" + executor
+				+ ", methodInterceptor=" + methodInterceptor + "]";
+	}
+    
+	class TaskExecutor implements Runnable {
         
         final Object obj;
         final Method method;
@@ -61,5 +68,12 @@ class AsynchronusInterceptor implements MethodInterceptor {
             	throw new AsyncTaskException(method, th);
             }
         }
+
+		@Override
+		public String toString() {
+			return "TaskExecutor [obj=" + obj + ", method=" + method
+					+ ", args=" + Arrays.toString(args) + ", proxy=" + proxy
+					+ "]";
+		}
     }
 }

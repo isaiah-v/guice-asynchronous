@@ -16,6 +16,7 @@
 package org.ivcode.guice.asynchronous.internal.proxy;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 import org.ivcode.guice.asynchronous.internal.utils.AssistedProvider;
 
@@ -108,4 +109,12 @@ public class EnhancerProvider<T> implements AssistedProvider<T> {
         
         return arguments;
     }
+
+	@Override
+	public String toString() {
+		return "EnhancerProvider [membersInjector=" + membersInjector
+				+ ", fastConstructor=" + fastConstructor + ", callbacks="
+				+ Arrays.toString(callbacks) + ", providers="
+				+ Arrays.toString(providers) + "]";
+	}
 }

@@ -18,6 +18,7 @@ package org.ivcode.guice.asynchronous.internal.proxy;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import net.sf.cglib.proxy.MethodProxy;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -42,7 +43,13 @@ public final class InterceptorStackCallback implements net.sf.cglib.proxy.Method
         return new InterceptedMethodInvocation(proxy, methodProxy, arguments).proceed();
     }
 
-    class InterceptedMethodInvocation implements MethodInvocation {
+    @Override
+	public String toString() {
+		return "InterceptorStackCallback [interceptors="
+				+ Arrays.toString(interceptors) + ", method=" + method + "]";
+	}
+
+	class InterceptedMethodInvocation implements MethodInvocation {
 
         final Object proxy;
         final Object[] arguments;
@@ -79,5 +86,12 @@ public final class InterceptorStackCallback implements net.sf.cglib.proxy.Method
         public AccessibleObject getStaticPart() {
             return getMethod();
         }
+
+		@Override
+		public String toString() {
+			return "InterceptedMethodInvocation [proxy=" + proxy
+					+ ", arguments=" + Arrays.toString(arguments)
+					+ ", methodProxy=" + methodProxy + ", index=" + index + "]";
+		}
     }
 }

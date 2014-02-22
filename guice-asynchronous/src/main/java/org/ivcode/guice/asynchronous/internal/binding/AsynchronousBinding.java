@@ -1,4 +1,19 @@
-package org.ivcode.guice.asynchronous.internal.bindings;
+/**
+ * Copyright (C) 2013 Isaiah van der Elst (isaiah.vanderelst@gmail.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.ivcode.guice.asynchronous.internal.binding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -26,7 +41,7 @@ import com.google.inject.binder.ScopedBindingBuilder;
 
 public class AsynchronousBinding<T> implements Binding  {
 	
-	private final AsynchronousClassFactory bindingClassFactory;
+	private final AsynchronousClassFactory asyncClassFactory;
 	private final EnhancerFactory enhancerFactory;
 	
 	private final Key<T> key;
@@ -35,7 +50,7 @@ public class AsynchronousBinding<T> implements Binding  {
 	private final ScopeBinding scopeBinding;
 	private final Object source;
 	
-	public AsynchronousBinding(Key<T> key, Constructor<? extends T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source, AsynchronousClassFactory bindingClassFactory, EnhancerFactory enhancerFactory) {
+	public AsynchronousBinding(Key<T> key, Constructor<? extends T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source, AsynchronousClassFactory asyncClassFactory, EnhancerFactory enhancerFactory) {
 		if(key==null) { throw new NullPointerException(); }
 		
 		this.key = key;
@@ -44,12 +59,12 @@ public class AsynchronousBinding<T> implements Binding  {
 		this.scopeBinding = scopeBinding;
 		this.source = source;
 		
-		this.bindingClassFactory = bindingClassFactory;
+		this.asyncClassFactory = asyncClassFactory;
 		this.enhancerFactory = enhancerFactory;
 	}
 	
 	public void applyTo(Binder binder) {
-        final AsynchronousClass<?> aopClass = bindingClassFactory.getBindingClass(key, constructor, interceptors);
+        final AsynchronousClass<?> asyncClass = asyncClassFactory.createAsynchronousClass(key, constructor, interceptors);
 		
 		setWithSource(binder);
         
@@ -57,9 +72,9 @@ public class AsynchronousBinding<T> implements Binding  {
         PrivateBinder privateBinder = binder.newPrivateBinder();
 
         // bind the EnhancerData to the private binder
-        bindEnhancerData(privateBinder, aopClass);
+        bindEnhancerData(privateBinder, asyncClass);
         
-        bindObjectFactory(privateBinder, aopClass);
+        bindObjectFactory(privateBinder, asyncClass);
         
         // bind the key to the Enhancer's provider to the provate binder
         TypeLiteral<EnhancerProvider<T>> type = createEnhancerProviderType();
@@ -111,4 +126,13 @@ public class AsynchronousBinding<T> implements Binding  {
         Type genaricType = key.getTypeLiteral().getType();
         return TypeLiteralFactory.createParameterizedTypeLiteral(mainType, genaricType);
     }
+
+	@Override
+	public String toString() {
+		return "AsynchronousBinding [asyncClassFactory=" + asyncClassFactory
+				+ ", enhancerFactory=" + enhancerFactory + ", key=" + key
+				+ ", constructor=" + constructor + ", interceptors="
+				+ interceptors + ", scopeBinding=" + scopeBinding + ", source="
+				+ source + "]";
+	}
 }

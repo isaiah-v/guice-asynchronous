@@ -51,4 +51,10 @@ public class MyThreadFactory implements ThreadFactory {
         return value;
     }
 
+	@Override
+	public String toString() {
+		return "MyThreadFactory [group=" + group + ", count=" + count
+				+ ", namePrefix=" + namePrefix + ", isDaemon=" + isDaemon
+				+ ", priority=" + priority + "]";
+	}
 }

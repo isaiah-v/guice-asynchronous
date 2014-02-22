@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ivcode.guice.asynchronous.internal.proxy;
+package org.ivcode.guice.asynchronous.internal.binding;
 
-import java.lang.reflect.Method;
+import com.google.inject.Scope;
+import com.google.inject.binder.ScopedBindingBuilder;
 
-public class AsyncTaskException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
+public class InstanceScopeBinding implements ScopeBinding {
+
+	private final Scope scope;
 	
-	private final Method method;
-	
-	public AsyncTaskException(Method method, Throwable cause) {
-		super("Uncaught Exception : Method="+method.getName(), cause);
-		this.method = method;
+	public InstanceScopeBinding(Scope scope) {
+		this.scope = scope;
 	}
 	
-	public Method getMethod() {
-		return method;
+	public void applyTo(ScopedBindingBuilder scopedBindingBuilder) {
+		scopedBindingBuilder.in(scope);
+	}
+
+	@Override
+	public String toString() {
+		return "InstanceScopeBinding [scope=" + scope + "]";
 	}
 }

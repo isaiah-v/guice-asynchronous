@@ -9,9 +9,9 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.ivcode.guice.asynchronous.AsynchronousBinder;
 import org.ivcode.guice.asynchronous.AsynchronousBindingBuilder;
 import org.ivcode.guice.asynchronous.AsynchronousPrivateBinder;
-import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingBean;
-import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingBuilderImpl;
-import org.ivcode.guice.asynchronous.internal.recorder.AsynchronousBindingProcessor;
+import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingBean;
+import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingBuilderImpl;
+import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessor;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -71,6 +71,14 @@ public class AsynchronousBinderManager {
 		return new LinkedList<T>(c);
 	}
 	
+	@Override
+	public String toString() {
+		return "AsynchronousBinderManager [asyncBindings=" + asyncBindings
+				+ ", isClosed=" + isClosed + "]";
+	}
+
+
+
 	private class MyAsynchronousBinder extends BinderWrapper implements AsynchronousBinder {
 		
 		private final Collection<InterceptorElement> interceptors;
@@ -111,6 +119,11 @@ public class AsynchronousBinderManager {
 		public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors) {
 			super.bindInterceptor(classMatcher, methodMatcher, interceptors);
 			this.interceptors.add(new InterceptorElement(classMatcher, methodMatcher, interceptors));
+		}
+
+		@Override
+		public String toString() {
+			return "MyAsynchronousBinder [interceptors=" + interceptors + "]";
 		}
 	}
 	
@@ -154,6 +167,12 @@ public class AsynchronousBinderManager {
 		public void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, MethodInterceptor... interceptors) {
 			super.bindInterceptor(classMatcher, methodMatcher, interceptors);
 			this.interceptors.add(new InterceptorElement(classMatcher, methodMatcher, interceptors));
+		}
+
+		@Override
+		public String toString() {
+			return "MyAsynchronousPrivateBinder [interceptors=" + interceptors
+					+ "]";
 		}
 	}
 }

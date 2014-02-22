@@ -141,7 +141,12 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
     	return fastClass.getConstructor(argumentTypes);
     }
 
-    /**
+    @Override
+	public String toString() {
+		return "EnhancerFactoryImpl [executor=" + executor + "]";
+	}
+
+	/**
      * The {@link Callback} asynchronous {@link Enhancer}'s
      * 
      * @author isaiah
@@ -158,5 +163,10 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
             Integer i = filterMap.get(method);
             return i == null ? 0 : i;
         }
+
+		@Override
+		public String toString() {
+			return "EnhancerCallbackFilter [filterMap=" + filterMap + "]";
+		}
     }
 }

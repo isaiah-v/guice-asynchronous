@@ -93,4 +93,10 @@ public class ExceptionsInterceptor implements MethodInterceptor {
     private String getMessage(FailFast failFast) {
         return failFast == null ? null : failFast.message();
     }
+
+	@Override
+	public String toString() {
+		return "ExceptionsInterceptor [thrownExceptions=" + thrownExceptions
+				+ "]";
+	}
 }

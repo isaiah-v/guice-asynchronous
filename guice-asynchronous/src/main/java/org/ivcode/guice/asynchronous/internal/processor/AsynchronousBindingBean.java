@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ivcode.guice.asynchronous.internal.proxy;
+package org.ivcode.guice.asynchronous.internal.processor;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.util.Collection;
 
-public class AsyncTaskException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
-	
-	private final Method method;
-	
-	public AsyncTaskException(Method method, Throwable cause) {
-		super("Uncaught Exception : Method="+method.getName(), cause);
-		this.method = method;
-	}
-	
-	public Method getMethod() {
-		return method;
-	}
+import org.ivcode.guice.asynchronous.internal.binder.InterceptorElement;
+import org.ivcode.guice.asynchronous.internal.binding.ScopeBinding;
+
+import com.google.inject.Binder;
+import com.google.inject.Key;
+
+public interface AsynchronousBindingBean<T> {
+	public Key<T> getKey();
+	public Object getSource();
+	public ScopeBinding getScopeBinding();
+	public Constructor<? extends T> getConstructor();
+	public Binder getBinder();
+	public Collection<InterceptorElement> getInterceptors();
 }

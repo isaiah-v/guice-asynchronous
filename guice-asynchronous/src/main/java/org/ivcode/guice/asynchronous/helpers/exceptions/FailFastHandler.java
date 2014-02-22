@@ -27,4 +27,9 @@ class FailFastHandler {
         Constructor<? extends Throwable> c = clazz.getConstructor(String.class);
         return c.newInstance(msg);
     }
+
+	@Override
+	public String toString() {
+		return "FailFastHandler";
+	}
 }
