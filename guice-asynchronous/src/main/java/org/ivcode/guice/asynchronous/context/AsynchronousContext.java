@@ -68,24 +68,33 @@ public interface AsynchronousContext {
     public boolean isShutdown();
     
     /**
-     * Cleanly shuts down the asynchronous service and waits for all tasks to
-     * complete. Even after this method is called, asynchronous tasks can be
-     * executed. When there are zero asynchronous tasks executing, the
-     * underlying executor service is shutdown and any further submissions will
-     * result in an exception.<br>
-     * <br>
-     * This method will unblock after the service has been completely shutdown
-     * or the thread is interrupted.
-     * 
-     * @throws InterruptedException
-     *             if the thread is interrupted while waiting
-     */
+	 * Cleanly shuts down the asynchronous service and waits for all tasks to
+	 * complete. Even after this method is called, asynchronous tasks can be
+	 * executed. When there are zero asynchronous tasks executing, the
+	 * underlying executor service is shutdown and any further submissions will
+	 * result in an exception.<br/>
+	 * <br/>
+	 * This method will unblock after the service has been completely shutdown
+	 * or the thread is interrupted.<br/>
+	 * <br/>
+	 * <b>Note:</b> Because this method blocks the current until all tasks have
+	 * completed, it should not be called from within a task.
+	 * 
+	 * @throws InterruptedException
+	 *             if the thread is interrupted while waiting
+	 */
     public void shutdown() throws InterruptedException;
+
 
     /**
      * Forcefully shuts down the asynchronous service. The underlying executor
      * service service is immediately shutdown and any further submissions will
      * result in an exception.<br>
+     * 
+     * @param isInterrupt
+     * 		if {@code true}, currently running tasks will be interrupted.
+     * @see
+     * 		java.lang.Thread#interrupt()
      */
-    public void shutdownNow();
+    public void shutdownNow(boolean isInterrupt);
 }

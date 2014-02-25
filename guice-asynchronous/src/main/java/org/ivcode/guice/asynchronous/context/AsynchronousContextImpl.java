@@ -74,6 +74,7 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
 
     public void execute(Runnable command) {
         executor.execute(new Task(command));
+        startTask();
     }
 
     public int getTasksStarted() {
@@ -96,12 +97,16 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
         return isShutdown || executor.isShutdown();
     }
     
-    public void shutdownNow() {
+    public void shutdownNow(boolean isInterrupt) {
         synchronized (this) {
             if (this.isShutdown) return;
 
             this.isShutdown = true;
-            this.executor.shutdownNow();
+            if(isInterrupt) {
+            	this.executor.shutdownNow();
+            } else {
+            	this.executor.shutdown();
+            }
         }
     }
     
@@ -118,7 +123,6 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
         private final Runnable task;
 
         private Task(Runnable task) {
-        	startTask();
             this.task = task;
         }
 
