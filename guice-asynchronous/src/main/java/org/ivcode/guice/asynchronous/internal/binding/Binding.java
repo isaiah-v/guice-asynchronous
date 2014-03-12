@@ -15,8 +15,6 @@
  */
 package org.ivcode.guice.asynchronous.internal.binding;
 
-import com.google.inject.Binder;
-
 public interface Binding {
-	public void applyTo(Binder binder);
+	public void bind();
 }

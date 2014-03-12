@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ivcode.guice.asynchronous.internal.processor;
+package org.ivcode.guice.asynchronous;
 
-import java.util.concurrent.Executor;
+import java.lang.reflect.Constructor;
 
-public interface AsynchronousBindingProcessorFactory {
-	AsynchronousBindingProcessor createAsynchronousBindingProcessor(Executor executor);
+import com.google.inject.binder.ScopedBindingBuilder;
+
+public interface AsynchronousBuilder<T> extends ScopedBindingBuilder {
+	public ScopedBindingBuilder withConstructor(Constructor<T> c);
 }

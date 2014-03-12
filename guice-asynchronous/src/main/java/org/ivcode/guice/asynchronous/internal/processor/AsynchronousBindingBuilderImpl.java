@@ -19,9 +19,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 
-import org.ivcode.guice.asynchronous.AsynchronousBindingBuilder;
+import org.ivcode.guice.asynchronous.AsynchronousBuilder;
 import org.ivcode.guice.asynchronous.internal.binder.InterceptorElement;
 import org.ivcode.guice.asynchronous.internal.binding.AnnotationScopeBinding;
+import org.ivcode.guice.asynchronous.internal.binding.Binding;
+import org.ivcode.guice.asynchronous.internal.binding.BindingBuilder;
+import org.ivcode.guice.asynchronous.internal.binding.BindingFactory;
 import org.ivcode.guice.asynchronous.internal.binding.EagerSingletonScopeBinding;
 import org.ivcode.guice.asynchronous.internal.binding.InstanceScopeBinding;
 import org.ivcode.guice.asynchronous.internal.binding.ScopeBinding;
@@ -31,8 +34,8 @@ import com.google.inject.Key;
 import com.google.inject.Scope;
 import com.google.inject.binder.ScopedBindingBuilder;
 
-public class AsynchronousBindingBuilderImpl<T> implements AsynchronousBindingBean<T>, ScopedBindingBuilder, AsynchronousBindingBuilder<T> {
-
+public class AsynchronousBindingBuilderImpl<T> implements ScopedBindingBuilder, AsynchronousBuilder<T>, BindingBuilder {
+	
 	private final Binder binder;
 	private final Collection<InterceptorElement> interceptors;
 	
@@ -40,7 +43,9 @@ public class AsynchronousBindingBuilderImpl<T> implements AsynchronousBindingBea
 	private final Object source;
 	
 	private ScopeBinding scopeBinding;
-	private Constructor<? extends T> constructor;
+	private Constructor<T> constructor;
+	
+	private boolean isBuilt = false;
 	
 	public AsynchronousBindingBuilderImpl(Binder binder, Collection<InterceptorElement> interceptors, Key<T> key, Object source) {
 		this.binder = binder;
@@ -49,45 +54,27 @@ public class AsynchronousBindingBuilderImpl<T> implements AsynchronousBindingBea
 		this.source = source;
 	}
 	
-	public void asEagerSingleton() {
+	public synchronized void asEagerSingleton() {
+		if(isBuilt) { throw new IllegalStateException("builder already built"); }
 		scopeBinding = new EagerSingletonScopeBinding();
 	}
 
-	public void in(Class<? extends Annotation> clazz) {
+	public synchronized void in(Class<? extends Annotation> clazz) {
+		if(isBuilt) { throw new IllegalStateException("builder already built"); }
 		scopeBinding = new AnnotationScopeBinding(clazz);
 	}
 
-	public void in(Scope scope) {
+	public synchronized void in(Scope scope) {
 		scopeBinding = new InstanceScopeBinding(scope);
 	}
 
-	public ScopedBindingBuilder toConstructor(Constructor<? extends T> c) {
+	public synchronized ScopedBindingBuilder withConstructor(Constructor<T> c) {
 		constructor = c;
 		return this;
 	}
-
-	public Key<T> getKey() {
-		return key;
-	}
-
-	public Object getSource() {
-		return source;
-	}
-
-	public ScopeBinding getScopeBinding() {
-		return scopeBinding;
-	}
-
-	public Constructor<? extends T> getConstructor() {
-		return constructor;
-	}
-
-	public Binder getBinder() {
-		return binder;
-	}
-
-	public Collection<InterceptorElement> getInterceptors() {
-		return interceptors;
+	
+	public Binding build(BindingFactory factory) {
+		return factory.createAsynchronousBinding(binder, key, constructor, interceptors, scopeBinding, source);
 	}
 
 	@Override

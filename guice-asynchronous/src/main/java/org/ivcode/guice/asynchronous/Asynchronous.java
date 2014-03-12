@@ -23,7 +23,7 @@ import java.lang.annotation.ElementType;
 /**
  * Marks a method as being asynchronous.
  * 
- * @see AsynchronousModule
+ * @see GuiceAsynchronous
  * @author Isaiah van der Elst
  */
 @Retention(RetentionPolicy.RUNTIME)

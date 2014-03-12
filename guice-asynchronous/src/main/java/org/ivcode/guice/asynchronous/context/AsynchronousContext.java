@@ -93,8 +93,6 @@ public interface AsynchronousContext {
      * 
      * @param isInterrupt
      * 		if {@code true}, currently running tasks will be interrupted.
-     * @see
-     * 		java.lang.Thread#interrupt()
      */
     public void shutdownNow(boolean isInterrupt);
 }

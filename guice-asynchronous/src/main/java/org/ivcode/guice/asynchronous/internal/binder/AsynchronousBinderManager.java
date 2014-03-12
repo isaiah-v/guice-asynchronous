@@ -2,16 +2,22 @@ package org.ivcode.guice.asynchronous.internal.binder;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.ivcode.guice.asynchronous.AsynchronousBinder;
-import org.ivcode.guice.asynchronous.AsynchronousBindingBuilder;
+import org.ivcode.guice.asynchronous.AsynchronousBuilder;
+import org.ivcode.guice.asynchronous.AsynchronousFactoryBuilder;
+import org.ivcode.guice.asynchronous.AsynchronousModule;
 import org.ivcode.guice.asynchronous.AsynchronousPrivateBinder;
-import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingBean;
+import org.ivcode.guice.asynchronous.internal.binding.BindingBuilder;
+import org.ivcode.guice.asynchronous.internal.binding.BindingFactory;
 import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingBuilderImpl;
-import org.ivcode.guice.asynchronous.internal.processor.AsynchronousBindingProcessor;
+import org.ivcode.guice.asynchronous.internal.processor.FactoryBindingBuilderImpl;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -21,46 +27,79 @@ import com.google.inject.matcher.Matcher;
 
 public class AsynchronousBinderManager {
 	
-	private final List<AsynchronousBindingBean<?>> asyncBindings = new LinkedList<AsynchronousBindingBean<?>>();
-	private boolean isClosed;
+	private final BindingFactory bindingFactory;
+	
+	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	private final List<BindingBuilder> asyncBindings = Collections.synchronizedList(new LinkedList<BindingBuilder>());
+	
+	private AtomicBoolean isClosed = new AtomicBoolean(false);
+	
+	public AsynchronousBinderManager(BindingFactory bindingFactory) {
+		this.bindingFactory = bindingFactory;
+	}
 	
 	public AsynchronousBinder createAsynchronousBinder(Binder binder) {
-		return createAsynchronousBinder(binder, this.<InterceptorElement>createCollection());
+		return createAsynchronousBinder(binder, this.<InterceptorElement>createCollection(), isClosed);
 	}
 	
-	private AsynchronousBinder createAsynchronousBinder(Binder binder, Collection<InterceptorElement> interceptors) {
-		return new MyAsynchronousBinder(binder, interceptors);
+	private AsynchronousBinder createAsynchronousBinder(Binder binder, Collection<InterceptorElement> interceptors, AtomicBoolean isClosed) {
+		return new MyAsynchronousBinder(binder, interceptors, isClosed);
 	}
 	
-	private AsynchronousPrivateBinder createAsynchronousPrivateBinder(PrivateBinder binder, Collection<InterceptorElement> interceptors) {
-		return new MyAsynchronousPrivateBinder(binder, interceptors);
+	private AsynchronousPrivateBinder createAsynchronousPrivateBinder(PrivateBinder binder, Collection<InterceptorElement> interceptors, AtomicBoolean isClosed) {
+		return new MyAsynchronousPrivateBinder(binder, interceptors, isClosed);
 	}
 	
-	private <T> AsynchronousBindingBuilder<T> bindAsynchronous(Binder binder, Collection<InterceptorElement> interceptors, Class<T> clazz) {
-		return bindAsynchronous(binder, interceptors, Key.get(clazz));
+	private <T> AsynchronousBuilder<T> bindAsynchronous(Binder binder, AtomicBoolean isClosed, Collection<InterceptorElement> interceptors, Class<T> clazz) {
+		return bindAsynchronous(binder, isClosed, interceptors, Key.get(clazz));
 	}
 
-	private <T> AsynchronousBindingBuilder<T> bindAsynchronous(Binder binder, Collection<InterceptorElement> interceptors, TypeLiteral<T> type) {
-		return bindAsynchronous(binder, interceptors, Key.get(type));
+	private <T> AsynchronousBuilder<T> bindAsynchronous(Binder binder, AtomicBoolean isClosed, Collection<InterceptorElement> interceptors, TypeLiteral<T> type) {
+		return bindAsynchronous(binder, isClosed, interceptors, Key.get(type));
 	}
 
-	private synchronized <T> AsynchronousBindingBuilder<T> bindAsynchronous(Binder binder, Collection<InterceptorElement> interceptors, Key<T> key) {
-		if(this.isClosed) { throw new IllegalStateException(); }
-		
-		AsynchronousBindingBuilderImpl<T> abb = new AsynchronousBindingBuilderImpl<T>(binder, interceptors, key, null);
-		
-		asyncBindings.add(abb);
-		
-		return abb;
-	}
-	
-	public void build(AsynchronousBindingProcessor bindingProcessor) {
-		synchronized(this) {
-			if(isClosed) { return; }
-			isClosed = true;
+	private synchronized <T> AsynchronousBuilder<T> bindAsynchronous(Binder binder, AtomicBoolean isClosed, Collection<InterceptorElement> interceptors, Key<T> key) {
+		lock.readLock().lock();
+		try {
+			if(isClosed.get()) { throw new IllegalStateException("closed binder"); }
+			
+			AsynchronousBindingBuilderImpl<T> abb = new AsynchronousBindingBuilderImpl<T>(binder, interceptors, key, null);
+			asyncBindings.add(abb);
+			
+			return abb;
+		} finally {
+			lock.readLock().unlock();
 		}
-		
-		bindingProcessor.process(asyncBindings);
+	}
+	
+	private synchronized AsynchronousFactoryBuilder bindAsynchronousFactory(Binder binder, AtomicBoolean isClosed, Collection<InterceptorElement> interceptors, Key<?> key) {
+		lock.readLock().lock();
+		try {
+			if(isClosed.get()) { throw new IllegalStateException("closed binder"); }
+			
+			FactoryBindingBuilderImpl abb = new FactoryBindingBuilderImpl(binder, interceptors, key, null);
+			asyncBindings.add(abb);
+			
+			return abb;
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	
+	public void build() {
+		lock.writeLock().lock();
+		try {
+			isClosed.set(true);
+			this.isClosed = new AtomicBoolean(false);
+			
+			for(BindingBuilder builder : asyncBindings) {
+				builder.build(bindingFactory).bind();
+			}
+			
+			asyncBindings.clear();
+		} finally {
+			lock.writeLock().unlock();
+		}
 	}
 	
 	private <T> Collection<T> createCollection() {
@@ -82,37 +121,39 @@ public class AsynchronousBinderManager {
 	private class MyAsynchronousBinder extends BinderWrapper implements AsynchronousBinder {
 		
 		private final Collection<InterceptorElement> interceptors;
+		private final AtomicBoolean isClosed;
 
-		MyAsynchronousBinder(Binder binder, Collection<InterceptorElement> interceptors) {
+		MyAsynchronousBinder(Binder binder, Collection<InterceptorElement> interceptors, AtomicBoolean isClosed) {
 			super(binder);
 			this.interceptors = interceptors;
+			this.isClosed = isClosed;
 		}
 		
 		@Override
 		public AsynchronousPrivateBinder newPrivateBinder() {
-			return createAsynchronousPrivateBinder(getBinder().newPrivateBinder(), createCollection(interceptors));
+			return createAsynchronousPrivateBinder(getBinder().newPrivateBinder(), createCollection(interceptors), isClosed);
 		}
 		
 		@Override
 		public AsynchronousBinder withSource(Object source) {
-			return createAsynchronousBinder(getBinder().withSource(source), interceptors);
+			return createAsynchronousBinder(getBinder().withSource(source), interceptors, isClosed);
 		}
 		
 		@Override
 		public AsynchronousBinder skipSources(@SuppressWarnings("rawtypes") Class... classesToSkip) {
-			return createAsynchronousBinder(getBinder().skipSources(classesToSkip), interceptors);
+			return createAsynchronousBinder(getBinder().skipSources(classesToSkip), interceptors, isClosed);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Class<T> clazz) {
-			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), interceptors ,clazz);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(Class<T> clazz) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed, interceptors ,clazz);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(TypeLiteral<T> type) {
-			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), interceptors, type);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(TypeLiteral<T> type) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed, interceptors, type);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Key<T> key) {
-			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), interceptors, key);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(Key<T> key) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed, interceptors, key);
 		}
 		
 		@Override
@@ -125,42 +166,60 @@ public class AsynchronousBinderManager {
 		public String toString() {
 			return "MyAsynchronousBinder [interceptors=" + interceptors + "]";
 		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(Class<?> factory) {
+			return this.bindAsynchronousFactory(Key.get(factory));
+		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(TypeLiteral<?> factory) {
+			return this.bindAsynchronousFactory(Key.get(factory));
+		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(Key<?> factory) {
+			return AsynchronousBinderManager.this.bindAsynchronousFactory(super.getBinder(), isClosed, interceptors, factory);
+		}
+
+		public void install(AsynchronousModule module) {
+			module.configure(this);
+		}
 	}
 	
 	private class MyAsynchronousPrivateBinder extends PrivateBinderWrapper implements AsynchronousPrivateBinder {
 		
-		private Collection<InterceptorElement> interceptors;
+		private final Collection<InterceptorElement> interceptors;
+		private final AtomicBoolean isClosed;
 		
-		MyAsynchronousPrivateBinder(PrivateBinder binder, Collection<InterceptorElement> interceptors) {
+		MyAsynchronousPrivateBinder(PrivateBinder binder, Collection<InterceptorElement> interceptors, AtomicBoolean isClosed) {
 			super(binder);
 			this.interceptors = interceptors;
+			this.isClosed = isClosed;
 		}
 		
 		@Override
 		public AsynchronousPrivateBinder newPrivateBinder() {
-			return createAsynchronousPrivateBinder(getBinder().newPrivateBinder(), createCollection(interceptors));
+			return createAsynchronousPrivateBinder(getBinder().newPrivateBinder(), createCollection(interceptors), isClosed);
 		}
 		
 		@Override
 		public AsynchronousPrivateBinder withSource(Object source) {
-			return createAsynchronousPrivateBinder(getBinder().withSource(source), interceptors);
+			return createAsynchronousPrivateBinder(getBinder().withSource(source), interceptors, isClosed);
 		}
 		
 		@Override
 		public AsynchronousPrivateBinder skipSources(@SuppressWarnings("rawtypes") Class... classesToSkip) {
-			return createAsynchronousPrivateBinder(getBinder().skipSources(classesToSkip), interceptors);
+			return createAsynchronousPrivateBinder(getBinder().skipSources(classesToSkip), interceptors, isClosed);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Class<T> clazz) {
-			return AsynchronousBinderManager.this.bindAsynchronous(this, interceptors, clazz);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(Class<T> clazz) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed, interceptors, clazz);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(TypeLiteral<T> type) {
-			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), interceptors, type);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(TypeLiteral<T> type) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed, interceptors, type);
 		}
 
-		public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Key<T> key) {
-			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), interceptors, key);
+		public <T> AsynchronousBuilder<T> bindAsynchronous(Key<T> key) {
+			return AsynchronousBinderManager.this.bindAsynchronous(getBinder(), isClosed , interceptors, key);
 		}
 		
 		@Override
@@ -173,6 +232,22 @@ public class AsynchronousBinderManager {
 		public String toString() {
 			return "MyAsynchronousPrivateBinder [interceptors=" + interceptors
 					+ "]";
+		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(Class<?> factory) {
+			return this.bindAsynchronousFactory(Key.get(factory));
+		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(TypeLiteral<?> factory) {
+			return this.bindAsynchronousFactory(Key.get(factory));
+		}
+
+		public AsynchronousFactoryBuilder bindAsynchronousFactory(Key<?> factory) {
+			return AsynchronousBinderManager.this.bindAsynchronousFactory(super.getBinder(), isClosed, interceptors, factory);
+		}
+
+		public void install(AsynchronousModule module) {
+			module.configure(this);
 		}
 	}
 }

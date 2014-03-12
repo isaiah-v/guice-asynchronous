@@ -25,13 +25,18 @@ import com.google.inject.TypeLiteral;
  * @author Isaiah van der Elst
  */
 public interface AsynchronousBinder extends Binder {
-	public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Class<T> clazz);
-
-	public <T> AsynchronousBindingBuilder<T> bindAsynchronous(TypeLiteral<T> type);
-
-	public <T> AsynchronousBindingBuilder<T> bindAsynchronous(Key<T> key);
+	
+	public <T> AsynchronousBuilder<T> bindAsynchronous(Class<T> clazz);
+	public <T> AsynchronousBuilder<T> bindAsynchronous(TypeLiteral<T> type);
+	public <T> AsynchronousBuilder<T> bindAsynchronous(Key<T> key);
+	
+	public AsynchronousFactoryBuilder bindAsynchronousFactory(Class<?> factory);
+	public AsynchronousFactoryBuilder bindAsynchronousFactory(TypeLiteral<?> factory);
+	public AsynchronousFactoryBuilder bindAsynchronousFactory(Key<?> factory);
 
 	public AsynchronousPrivateBinder newPrivateBinder();
+	
+	public void install(AsynchronousModule module);
 
 	public AsynchronousBinder withSource(Object source);
 
