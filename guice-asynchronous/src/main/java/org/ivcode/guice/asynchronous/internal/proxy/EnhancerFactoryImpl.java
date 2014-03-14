@@ -103,7 +103,7 @@ public class EnhancerFactoryImpl implements EnhancerFactory {
 
             List<org.aopalliance.intercept.MethodInterceptor> interceptors = method.getInterceptors();
 
-            MethodInterceptor mi = interceptors == null ? new DirectInterceptor() : new InterceptorStackCallback(method.getMethod(), interceptors);
+            MethodInterceptor mi = interceptors == null || interceptors.isEmpty() ? new DirectInterceptor() : new InterceptorStackCallback(method.getMethod(), interceptors);
             if (method.isAsynchronous()) mi = new AsynchronusInterceptor(executor, mi);
 
             boolean b1 = callbackList.add(mi);

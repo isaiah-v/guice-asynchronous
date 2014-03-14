@@ -12,7 +12,6 @@ public class ConstructorProvidersModule implements Module {
 	private final AsynchronousClass<?> asyncClass;
 	
 	public ConstructorProvidersModule(AsynchronousClass<?> asyncClass) {
-		super();
 		this.asyncClass = asyncClass;
 	}
 

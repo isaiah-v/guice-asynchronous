@@ -17,6 +17,9 @@ package org.ivcode.guice.asynchronous.internal.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -25,6 +28,7 @@ import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.ScopeAnnotation;
+import com.google.inject.TypeLiteral;
 
 public class GuiceAsyncUtils {
 
@@ -78,6 +82,39 @@ public class GuiceAsyncUtils {
             constructor = c;
         }
         return (Constructor<T>) constructor;
+    }
+    
+    public static List<Key<?>> createConstructorKeys(TypeLiteral<?> type, Constructor<?> constructor) {
+    	List<TypeLiteral<?>> paramTypes = type.getParameterTypes(constructor);
+    	Annotation[][] paramAnnos = constructor.getParameterAnnotations();
+    	
+    	return createParamKeys(paramTypes, paramAnnos);
+    }
+    
+    public static List<Key<?>> createMethodKeys(TypeLiteral<?> type, Method method) {
+    	List<TypeLiteral<?>> paramTypes = type.getParameterTypes(method);
+    	Annotation[][] paramAnnos = method.getParameterAnnotations();
+    	
+    	return createParamKeys(paramTypes, paramAnnos);
+    }
+    
+    private static List<Key<?>> createParamKeys(List<TypeLiteral<?>> paramTypes, Annotation[][] paramAnnotations) {
+    	List<Key<?>> value = new ArrayList<Key<?>>(paramTypes.size());
+    	for(int i=0; i<paramTypes.size(); i++) {
+    		TypeLiteral<?> paramType = paramTypes.get(i);
+    		Annotation annotation = findBindingAnnotation(paramAnnotations[i]);
+    		
+    		Key<?> key;
+    		if(annotation!=null) {
+    			key = Key.get(paramType, annotation);
+    		} else {
+    			key = Key.get(paramType);
+    		}
+    		
+    		value.add(key);
+    	}
+    	
+    	return value;
     }
     
     /**

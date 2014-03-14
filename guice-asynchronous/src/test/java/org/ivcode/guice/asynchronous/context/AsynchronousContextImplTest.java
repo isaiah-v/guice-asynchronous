@@ -48,6 +48,7 @@ public class AsynchronousContextImplTest {
 				public void run() {}
 			});
 			
+			fail("task not rejected");
 		} catch (RejectedExecutionException e) {
 		}
 		

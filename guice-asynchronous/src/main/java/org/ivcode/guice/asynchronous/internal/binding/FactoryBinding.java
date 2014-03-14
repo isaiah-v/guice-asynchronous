@@ -48,8 +48,8 @@ public class FactoryBinding implements Binding {
 		EnhancerData enhancerData = enhancerFactory.createEnhancer(asyncClass);
 		
 		Map<Method, int[]> methodMapping = indexMapFactory.createIndexMap(
-												factoryKey.getTypeLiteral().getRawType(),
-												asyncKey.getTypeLiteral().getRawType(),
+												factoryKey,
+												asyncKey,
 												asyncClass.getConstructor().getArgumentKeys());
 		
 		setWithSource(binder);

@@ -61,6 +61,7 @@ public class FactoryBindingModule implements Module {
         return TypeLiteralFactory.createParameterizedTypeLiteral(Map.class, Method.class, int[].class);
     }
 	
+	@SuppressWarnings("unchecked")
 	private <T> void bindClass(Binder binder, Key<T> key) {
 		binder.bind(createClassType(key)).toInstance((Class<T>)key.getTypeLiteral().getRawType());
 	}

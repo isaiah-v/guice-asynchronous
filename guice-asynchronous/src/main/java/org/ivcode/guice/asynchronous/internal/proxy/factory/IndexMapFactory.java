@@ -1,6 +1,5 @@
 package org.ivcode.guice.asynchronous.internal.proxy.factory;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +13,10 @@ import com.google.inject.Key;
 
 public class IndexMapFactory {
 	
-	public Map<Method, int[]> createIndexMap(Class<?> factory, Class<?> targetType, Key<?>... constructorKeys) {
+	public Map<Method, int[]> createIndexMap(Key<?> factoryKey, Key<?> targetkey, Key<?>... constructorKeys) {
+		Class<?> factory = factoryKey.getTypeLiteral().getRawType();
+		Class<?> targetType = targetkey.getTypeLiteral().getRawType();
+		
 		if(!factory.isInterface()) {
 			throw new IllegalArgumentException("the factory class must be an interface");
 		}
@@ -26,20 +28,19 @@ public class IndexMapFactory {
 		final Map<Method, int[]> mappings = new HashMap<Method, int[]>();
 		
 		for(Method method : factory.getDeclaredMethods()) {
+			List<Key<?>> methodKeys = GuiceAsyncUtils.createMethodKeys(factoryKey.getTypeLiteral(), method);
+			
 			Class<?> rtype = method.getReturnType();
 			
 			if(!rtype.isAssignableFrom(targetType)) {
 				throw new IllegalArgumentException("methods in the factory class must return a type that is assignable from the target type : method=" + method + " : targetType=" + targetType);
 			}
 			
-			Annotation[][] paramAnnos = method.getParameterAnnotations();
-			Class<?>[] paramTypes = method.getParameterTypes();
-			
 			int[] indexMap = new int[constructorKeys.length];
 			Arrays.fill(indexMap, -1);
 			
-			for(int i=0; i<paramTypes.length; i++) {
-				Key<?> key = createKey(paramTypes[i], paramAnnos[i]);
+			for(int i=0; i<methodKeys.size(); i++) {
+				Key<?> key = methodKeys.get(i);
 				List<Integer> indexes = indexLookup.get(key);
 				if(indexes==null) { continue; }
 				
@@ -72,10 +73,5 @@ public class IndexMapFactory {
 		}
 		
 		indexCollection.add(index);
-	}
-	
-	private <T> Key<T> createKey(Class<T> clazz, Annotation[] annotations) {
-		Annotation annotation = GuiceAsyncUtils.findBindingAnnotation(annotations);
-		return annotation==null ? Key.get(clazz) : Key.get(clazz, annotation);
 	}
 }

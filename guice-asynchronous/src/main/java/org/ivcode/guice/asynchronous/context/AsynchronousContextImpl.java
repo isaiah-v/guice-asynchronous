@@ -72,8 +72,9 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public void execute(Runnable command) {
-        executor.execute(new Task(command));
+    public synchronized void execute(Runnable command) {
+		executor.execute(new Task(command));
+		startTask();
     }
 
     public int getTasksStarted() {
@@ -123,7 +124,6 @@ public class AsynchronousContextImpl implements AsynchronousContext, Executor {
         private final Runnable task;
 
         private Task(Runnable task) {
-        	startTask();
             this.task = task;
         }
 

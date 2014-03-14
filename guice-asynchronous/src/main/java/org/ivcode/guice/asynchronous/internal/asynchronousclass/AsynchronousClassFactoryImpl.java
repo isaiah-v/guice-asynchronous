@@ -16,11 +16,9 @@
 package org.ivcode.guice.asynchronous.internal.asynchronousclass;
 
 
-import static org.ivcode.guice.asynchronous.internal.utils.GuiceAsyncUtils.findBindingAnnotation;
 import static org.ivcode.guice.asynchronous.internal.utils.GuiceAsyncUtils.findInjectConstructor;
 import static org.ivcode.guice.asynchronous.internal.utils.GuiceAsyncUtils.getRawType;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,9 +30,9 @@ import java.util.List;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.ivcode.guice.asynchronous.Asynchronous;
 import org.ivcode.guice.asynchronous.internal.binder.InterceptorElement;
+import org.ivcode.guice.asynchronous.internal.utils.GuiceAsyncUtils;
 
 import com.google.inject.Key;
-import com.google.inject.Provider;
 
 public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
 	
@@ -51,13 +49,11 @@ public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
     
     
     private AsynchronousConstructor createAsynchronousConstructor(Key<?> key, Constructor<?> c) {
-        Class<?> clazz = getRawType(key);
-        
         AsynchronousConstructor asyncConstructor = null;
         if(c!=null) {
-            asyncConstructor = createAsynchronousConstructor(c);
+            asyncConstructor = createAsynchronousConstructorFromConstructor(key,c);
         } else {
-            asyncConstructor = createAsynchronousConstructor(clazz);
+            asyncConstructor = createAsynchronousConstructor(key);
         }
         
         return asyncConstructor==null ? createAsynchronousConstructor() : asyncConstructor;
@@ -71,51 +67,26 @@ public class AsynchronousClassFactoryImpl implements AsynchronousClassFactory {
         return asyncConstructor;
     }
     
-    private AsynchronousConstructor createAsynchronousConstructor(Class<?> clazz) {
-        Constructor<?> c = findInjectConstructor(clazz);
+    private AsynchronousConstructor createAsynchronousConstructor(Key<?> key) {
+    	Class<?> clazz = getRawType(key);
+    	
+    	Constructor<?> c = findInjectConstructor(clazz);
         if(c==null) return null;
         
-        Class<?>[] argumentTypes = c.getParameterTypes();
-        Key<?>[] argumentKeys = new Key[argumentTypes.length];
-        
-        Provider<?>[] provider = new Provider[argumentTypes.length];
-        for(int i=0; i<provider.length; i++) {
-            Class<?> argclazz = argumentTypes[i];
-            Key<?> key = createKey(argclazz, c.getParameterAnnotations()[i]);
-            
-            argumentKeys[i] = key;
-        }
-        
-        AsynchronousConstructor asyncConstructor = new AsynchronousConstructor();
-        asyncConstructor.setArgumentTypes(argumentTypes);
-        asyncConstructor.setArgumentKeys(argumentKeys);
-        
-        return asyncConstructor;
+        return createAsynchronousConstructorFromConstructor(key, c);
     }
     
-    private AsynchronousConstructor createAsynchronousConstructor(Constructor<?> c) {
+    private AsynchronousConstructor createAsynchronousConstructorFromConstructor(Key<?> key, Constructor<?> c) {
+    	List<Key<?>> keys = GuiceAsyncUtils.createConstructorKeys(key.getTypeLiteral(), c);
+    	
     	Class<?>[] argumentTypes = c.getParameterTypes();
-        Key<?>[] argumentKeys = new Key[argumentTypes.length];
-        
-        for(int i=0; i<argumentTypes.length; i++) {
-        	Key<?> key = createKey(argumentTypes[i], c.getParameterAnnotations()[i]);
-            argumentKeys[i] = key;
-        }
+        Key<?>[] argumentKeys = keys.toArray(new Key<?>[keys.size()]);
         
         AsynchronousConstructor asyncConstructor = new AsynchronousConstructor();
         asyncConstructor.setArgumentTypes(argumentTypes);
         asyncConstructor.setArgumentKeys(argumentKeys);
         
         return asyncConstructor;
-    }
-    
-    private <T> Key<T> createKey(Class<T> clazz, Annotation[] annotations) {
-        Annotation a = findBindingAnnotation(annotations);
-        if(a!=null) {
-            return Key.get(clazz, a);
-        } else {
-            return Key.get(clazz);
-        }
     }
     
     private AsynchronousMethod[] createAsynchronousMethod(Key<?> key, Collection<InterceptorElement> interceptors) {
