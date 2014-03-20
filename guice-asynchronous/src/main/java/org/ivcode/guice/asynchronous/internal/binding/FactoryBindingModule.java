@@ -4,6 +4,9 @@ import static org.ivcode.guice.asynchronous.internal.binding.Utils.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClass;
@@ -36,7 +39,9 @@ public class FactoryBindingModule implements Module {
 	}
 
 	public void configure(Binder binder) {
-		binder.install(new ConstructorProvidersModule(asyncClass));
+		Collection<Key<?>> ignoreSet = createIgnoreSet(methodMapping, asyncClass.getConstructor().getArgumentKeys());
+		
+		binder.install(new ConstructorProvidersModule(asyncClass, ignoreSet));
 		binder.install(new EnhancerDataModule(enhancerData));
 		
 		bindAssistedProvider(binder, asycKey);
@@ -69,4 +74,27 @@ public class FactoryBindingModule implements Module {
 	private <T> TypeLiteral<Class<T>> createClassType(Key<T> key) {
         return TypeLiteralFactory.createParameterizedTypeLiteral(Class.class, key.getTypeLiteral().getRawType());
     }
+	
+	/**
+	 * Figures out what parameter providers are not needed for the factory  
+	 * @param methodMapping
+	 * 		the parameter mappings
+	 * @param keys
+	 * 		Parameter Keys
+	 * @return
+	 * 		A collection of keys that we don't need to provider to
+	 */
+	private Collection<Key<?>> createIgnoreSet(Map<Method, int[]> methodMapping, Key<?>[] keys) {
+		Key<?>[] myKeys = keys.clone();
+		
+		for(Map.Entry<Method, int[]> entry : methodMapping.entrySet()) {
+			int[] mappings = entry.getValue();
+			for(int i=0; i<mappings.length; i++) {
+				if(mappings[i]>=0) { continue; }
+				myKeys[i] = null;
+			}
+		}
+		
+		return new HashSet<Key<?>>(Arrays.asList(myKeys));
+	}
 }
