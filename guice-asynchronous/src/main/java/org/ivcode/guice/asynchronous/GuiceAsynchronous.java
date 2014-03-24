@@ -15,309 +15,144 @@
  */
 package org.ivcode.guice.asynchronous;
 
-import java.lang.annotation.Annotation;
+
 import java.lang.reflect.Method;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.ivcode.guice.asynchronous.context.AsynchronousContext;
-import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
-import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactory;
-import org.ivcode.guice.asynchronous.internal.asynchronousclass.AsynchronousClassFactoryImpl;
-import org.ivcode.guice.asynchronous.internal.binder.AsynchronousBinderManager;
-import org.ivcode.guice.asynchronous.internal.binding.BindingFactory;
-import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactory;
-import org.ivcode.guice.asynchronous.internal.proxy.EnhancerFactoryImpl;
-import org.ivcode.guice.asynchronous.internal.proxy.factory.IndexMapFactory;
-import org.ivcode.guice.asynchronous.internal.utils.InternalClasses;
+import org.ivcode.guice.asynchronous.internal.modules.WrapperModule;
+import org.ivcode.guice.asynchronous.internal.proxy.AsyncTaskException;
+import org.ivcode.guice.asynchronous.internal.utils.GuiceAsyncUtils;
 
-import com.google.inject.Binder;
-import com.google.inject.Key;
-import com.google.inject.MembersInjector;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Scope;
-import com.google.inject.Stage;
-import com.google.inject.TypeLiteral;
-import com.google.inject.binder.AnnotatedBindingBuilder;
-import com.google.inject.binder.AnnotatedConstantBindingBuilder;
-import com.google.inject.binder.LinkedBindingBuilder;
-import com.google.inject.matcher.Matcher;
-import com.google.inject.spi.Message;
-import com.google.inject.spi.TypeConverter;
-import com.google.inject.spi.TypeListener;
 
-/**
- * The {@link GuiceAsynchronous} wraps Guice's {@link Binder} a with an
- * {@link AsynchronousBinder} which performs the magic that enables asynchronous
- * bindings.
- * 
- * @author Isaiah van der Elst
- */
-public abstract class GuiceAsynchronous implements Module {
+public class GuiceAsynchronous {
 
-	private final AsynchronousBinderManager bindingManager;
+	private final MyExecutor myExecutor;
 	
-	private final AsynchronousContext context;
-	
-	private AsynchronousBinder rootBinder;
-	
-	public GuiceAsynchronous() {
-		this(new AsynchronousContextImpl());
-	}
+    private final AtomicInteger runningTasks = new AtomicInteger(0);
+    private volatile boolean isShutdown;
 
-	/**
-	 * Creates a new {@link GuiceAsynchronous}<br/>
-	 * <br/>
-	 * This constructor will result in the given context (a parent context)
-	 * being used process the asynchronous tasks. The parent context will not be
-	 * bound by this module
-	 * 
-	 * @param context
-	 *            parent context
-	 */
-	public GuiceAsynchronous(AsynchronousContext context) {
-		if(context==null || context.isShutdown() || context.getExecutor()==null) {
-			throw new IllegalArgumentException("invalid context");
+    private volatile int exceptionsThrown;
+
+    public GuiceAsynchronous() {
+    	this(GuiceAsyncUtils.createDefaultExecutor());
+    }
+    
+    public GuiceAsynchronous(ExecutorService executor) {
+    	if(executor==null || executor.isShutdown()) {
+    		throw new IllegalArgumentException("invalid executor");
+    	}
+    	
+        this.myExecutor = new MyExecutor(executor);
+    }
+
+    private void startTask() {
+        runningTasks.incrementAndGet();
+    }
+
+    private void endTask() {
+    	if(runningTasks.decrementAndGet()<=0) {
+    		synchronized (this) { this.notifyAll(); }
+    	}
+    }
+    
+    private synchronized void onException(Method method, Throwable th) {
+        exceptionsThrown++;
+    }
+
+    public void shutdown() throws InterruptedException {
+        synchronized (this) {
+            while (runningTasks.get()>0) {
+                this.wait();
+            }
+            
+            if (this.isShutdown) return;
+            this.isShutdown = true;
+            myExecutor.executor.shutdown();
+        }
+
+        myExecutor.executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    }
+
+    public int getRunningCount() {
+        return runningTasks.get();
+    }
+
+    public int getExceptionsThrown() {
+        return exceptionsThrown;
+    }
+
+    public Executor getExecutor() {
+        return myExecutor;
+    }
+
+    public boolean isShutdown() {
+        return isShutdown || myExecutor.executor.isShutdown();
+    }
+    
+    public void shutdownNow(boolean isInterupt) {
+        synchronized (this) {
+            if (this.isShutdown) return;
+
+            this.isShutdown = true;
+            
+            if(isInterupt) {
+            	this.myExecutor.executor.shutdownNow();
+            } else {
+            	this.myExecutor.executor.shutdown();
+            }
+        }
+    }
+    
+    private final class MyExecutor implements Executor {
+
+    	private final ExecutorService executor;
+    	
+    	public MyExecutor(ExecutorService executor) {
+    		this.executor = executor;
 		}
-		
-		this.context = context;
-		
-		EnhancerFactory enhancerFactory = new EnhancerFactoryImpl(context.getExecutor());
-		AsynchronousClassFactory asyncClassFactory = new AsynchronousClassFactoryImpl();
-		IndexMapFactory indexMapFactory = new IndexMapFactory();
-		
-		BindingFactory bindingFactory = new BindingFactory(asyncClassFactory, enhancerFactory, indexMapFactory);
-		
-		this.bindingManager = new AsynchronousBinderManager(bindingFactory);
-	}
-	
-	/**
-	 * Configures a {@link AsynchronousBinder} via the exposed methods.
-	 */
-	protected abstract void configure() throws Exception;
-	
-	public synchronized final void configure(Binder binder) {
-		final AsynchronousBinder asyncBinder = bindingManager.createAsynchronousBinder(binder);
-		
-		configure(asyncBinder);
-		buildAsynchronousBindings();
-	}
-	
-	private synchronized final void configure(AsynchronousBinder binder) {
-		this.rootBinder = binder;
-		try {
-			InternalClasses.loadInternalClasses();
-			configure();
-		} catch (Throwable e) {
-			binder.addError(e);
-		} finally {
-			this.rootBinder = null;
+    	
+		public void execute(Runnable command) {
+			try {
+		    	startTask();
+		    	executor.execute(new Task(command));
+	    	} catch (Throwable th) {
+	    		endTask();
+	    	}
 		}
-	}
-	
-	private void buildAsynchronousBindings() {
-		bindingManager.build();
-	}
-	
-	protected AsynchronousBinder binder() {
-		return rootBinder;
-	}
-	
-	public AsynchronousContext getContext() {
-		return context;
-	}
-	
-	protected void bindContext() {
-		binder().bind(AsynchronousContext.class).toInstance(context);
-	}
-	
-	protected void bindContext(Key<AsynchronousContext> key) {
-		binder().bind(key).toInstance(context);
-	}
+    	
+    }
 
-	/**
-	 * Creates an asynchronous binding
-	 * @param clazz
-	 * 		The asynchronous class
-	 */
-	protected <T> AsynchronousBuilder<T> bindAsynchronous(Class<T> clazz) {
-		return binder().bindAsynchronous(clazz);
-	}
+	private final class Task implements Runnable {
 
-	/**
-	 * Creates an asynchronous binding
-	 * @param type
-	 * 		The class type to asynchronize and bind 
-	 */
-	protected <T> AsynchronousBuilder<T> bindAsynchronous(TypeLiteral<T> type) {
-		return binder().bindAsynchronous(type);
-	}
-	
-	/**
-	 * Creates an asynchronous binding
-	 * @param key
-	 * 		A key representing the class to asynchronize and bind 
-	 */
-	protected <T> AsynchronousBuilder<T> bindAsynchronous(Key<T> key) {
-		return binder().bindAsynchronous(key);
-	}
+        private final Runnable task;
 
-	/**
-	 * @see Binder#bindScope(Class, Scope)
-	 */
-	protected void bindScope(Class<? extends Annotation> scopeAnnotation, Scope scope) {
-		binder().bindScope(scopeAnnotation, scope);
-	}
+        private Task(Runnable task) {
+        	this.task = task;
+        }
 
-	/**
-	 * @see Binder#bind(Key)
-	 */
-	protected <T> LinkedBindingBuilder<T> bind(Key<T> key) {
-		return binder().bind(key);
-	}
+        public void run() {
+            try {
+                task.run();
+            } catch (AsyncTaskException e) {
+            	onException(e.getMethod(), e.getCause());
+            } catch (Throwable th) {
+                onException(null, th);
+            } finally {
+                endTask();
+            }
+        }
 
-	/**
-	 * @see Binder#bind(TypeLiteral)
-	 */
-	protected <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral) {
-		return binder().bind(typeLiteral);
-	}
+		@Override
+		public String toString() {
+			return "Task [task=" + task + "]";
+		}
+    }
 
-	/**
-	 * @see Binder#bind(Class)
-	 */
-	protected <T> AnnotatedBindingBuilder<T> bind(Class<T> clazz) {
-		return binder().bind(clazz);
-	}
-
-	/**
-	 * @see Binder#bindConstant()
-	 */
-	protected AnnotatedConstantBindingBuilder bindConstant() {
-		return binder().bindConstant();
-	}
-
-	/**
-	 * @see Binder#install(Module)
-	 */
-	protected void install(Module module) {
-		binder().install(module);
-	}
-	
-	protected void installModulet(AsynchronousModule modulet) {
-		modulet.configure(this.binder());
-	}
-
-	/**
-	 * @see Binder#addError(String, Object[])
-	 */
-	protected void addError(String message, Object... arguments) {
-		binder().addError(message, arguments);
-	}
-
-	/**
-	 * @see Binder#addError(Throwable)
-	 */
-	protected void addError(Throwable t) {
-		binder().addError(t);
-	}
-
-	/**
-	 * @see Binder#addError(Message)
-	 */
-	protected void addError(Message message) {
-		binder().addError(message);
-	}
-
-	/**
-	 * @see Binder#requestInjection(Object)
-	 */
-	protected void requestInjection(Object instance) {
-		binder().requestInjection(instance);
-	}
-
-	/**
-	 * @see Binder#requestStaticInjection(Class[])
-	 */
-	protected void requestStaticInjection(Class<?>... types) {
-		binder().requestStaticInjection(types);
-	}
-
-	/**
-	 * @see Binder#bindInterceptor(com.google.inject.matcher.Matcher,
-	 *      com.google.inject.matcher.Matcher,
-	 *      org.aopalliance.intercept.MethodInterceptor[])
-	 */
-	protected void bindInterceptor(Matcher<? super Class<?>> classMatcher, Matcher<? super Method> methodMatcher, org.aopalliance.intercept.MethodInterceptor... interceptors) {
-		binder().bindInterceptor(classMatcher, methodMatcher, interceptors);
-	}
-
-	/**
-	 * Adds a dependency from this module to {@code key}. When the injector is
-	 * created, Guice will report an error if {@code key} cannot be injected.
-	 * Note that this requirement may be satisfied by implicit binding, such as
-	 * a public no-arguments constructor.
-	 */
-	protected void requireBinding(Key<?> key) {
-		binder().getProvider(key);
-	}
-
-	/**
-	 * Adds a dependency from this module to {@code type}. When the injector is
-	 * created, Guice will report an error if {@code type} cannot be injected.
-	 * Note that this requirement may be satisfied by implicit binding, such as
-	 * a public no-arguments constructor.
-	 */
-	protected void requireBinding(Class<?> type) {
-		binder().getProvider(type);
-	}
-
-	/**
-	 * @see Binder#getProvider(Key)
-	 */
-	protected <T> Provider<T> getProvider(Key<T> key) {
-		return binder().getProvider(key);
-	}
-
-	/**
-	 * @see Binder#getProvider(Class)
-	 */
-	protected <T> Provider<T> getProvider(Class<T> type) {
-		return binder().getProvider(type);
-	}
-
-	/**
-	 * @see Binder#convertToTypes
-	 */
-	protected void convertToTypes(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter converter) {
-		binder().convertToTypes(typeMatcher, converter);
-	}
-
-	/**
-	 * @see Binder#currentStage()
-	 */
-	protected Stage currentStage() {
-		return binder().currentStage();
-	}
-
-	/**
-	 * @see Binder#getMembersInjector(Class)
-	 */
-	protected <T> MembersInjector<T> getMembersInjector(Class<T> type) {
-		return binder().getMembersInjector(type);
-	}
-
-	/**
-	 * @see Binder#getMembersInjector(TypeLiteral)
-	 */
-	protected <T> MembersInjector<T> getMembersInjector(TypeLiteral<T> type) {
-		return binder().getMembersInjector(type);
-	}
-
-	/**
-	 * @see Binder#bindListener(com.google.inject.matcher.Matcher,
-	 *      com.google.inject.spi.TypeListener)
-	 */
-	protected void bindListener(Matcher<? super TypeLiteral<?>> typeMatcher, TypeListener listener) {
-		binder().bindListener(typeMatcher, listener);
+	public Module createModule(AsynchronousModule... asyncModules) {
+		return new WrapperModule(this, asyncModules);
 	}
 }

@@ -20,10 +20,12 @@ import java.lang.annotation.Target;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.ElementType;
 
+import org.ivcode.guice.asynchronous.internal.modules.WrapperModule;
+
 /**
  * Marks a method as being asynchronous.
  * 
- * @see GuiceAsynchronous
+ * @see WrapperModule
  * @author Isaiah van der Elst
  */
 @Retention(RetentionPolicy.RUNTIME)

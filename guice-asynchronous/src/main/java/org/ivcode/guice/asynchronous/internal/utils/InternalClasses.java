@@ -20,7 +20,7 @@ import java.util.Collection;
 
 import net.sf.cglib.proxy.MethodProxy;
 
-import org.ivcode.guice.asynchronous.context.AsynchronousContextImpl;
+import org.ivcode.guice.asynchronous.GuiceAsynchronous;
 import org.ivcode.guice.asynchronous.internal.proxy.AsyncTaskException;
 import org.ivcode.guice.asynchronous.internal.proxy.AsynchronusInterceptor;
 import org.ivcode.guice.asynchronous.internal.proxy.DirectInterceptor;
@@ -39,7 +39,7 @@ public class InternalClasses {
 		return loadDeclaredClasses(new ArrayList<Class<?>>(),
 				AsynchronusInterceptor.class,
 				InterceptorStackCallback.class,
-				AsynchronousContextImpl.class,
+				GuiceAsynchronous.class,
 				AsyncTaskException.class,
 				InterceptorStackCallback.class,
 				MethodProxy.class,
