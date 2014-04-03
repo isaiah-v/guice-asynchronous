@@ -23,8 +23,8 @@ public class BindingFactory {
 		this.indexMapFactory = indexMapFactory;
 	}
 	
-	public <T> Binding createAsynchronousBinding(Binder binder, Key<T> key, Constructor<T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source) {
-		return new AsynchronousBinding<T>(binder, key, c, interceptors, scopeBinding, source, asyncClassFactory, enhancerFactory);
+	public <T> Binding createAsynchronousBinding(Binder binder, Key<? super T> sourceKey, Key<T> targetKey, Constructor<T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source) {
+		return new AsynchronousBinding<T>(binder, sourceKey, targetKey,c, interceptors, scopeBinding, source, asyncClassFactory, enhancerFactory);
 	}
 	
 	public Binding createFactoryBinding(Binder binder, Key<?> factoryKey, Key<?> asyncKey, Collection<InterceptorElement> interceptors, Object source) {

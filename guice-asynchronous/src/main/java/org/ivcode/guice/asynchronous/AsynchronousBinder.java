@@ -20,15 +20,15 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 
 /**
- * An extention to the {@link Binder} interface that's also used to bind asynchronous classes
+ * An extension to the {@link Binder} interface that's also used to bind asynchronous classes
  * 
  * @author Isaiah van der Elst
  */
 public interface AsynchronousBinder extends Binder {
 	
-	public <T> AsynchronousBuilder<T> bindAsynchronous(Class<T> clazz);
-	public <T> AsynchronousBuilder<T> bindAsynchronous(TypeLiteral<T> type);
-	public <T> AsynchronousBuilder<T> bindAsynchronous(Key<T> key);
+	public <S> AsynchronousLinkedBindingBuilder<S> bindAsynchronous(Key<S> key);
+	public <S> AsynchronousAnnotatedBindingBuilder<S> bindAsynchronous(TypeLiteral<S> type);
+	public <S> AsynchronousAnnotatedBindingBuilder<S> bindAsynchronous(Class<S> clazz);
 	
 	public AsynchronousFactoryBuilder bindAsynchronousFactory(Class<?> factory);
 	public AsynchronousFactoryBuilder bindAsynchronousFactory(TypeLiteral<?> factory);

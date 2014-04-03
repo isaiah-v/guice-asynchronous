@@ -35,18 +35,20 @@ public class AsynchronousBinding<T> implements Binding  {
 	
 	private final Binder binder;
 	
-	private final Key<T> key;
-	private final Constructor<? extends T> constructor;
+	private final Key<? super T> sourceKey;
+	private final Key<T> targetKey;
+	private final Constructor<T> constructor;
 	private final Collection<InterceptorElement> interceptors;
 	private final ScopeBinding scopeBinding;
 	private final Object source;
 	
-	public AsynchronousBinding(Binder binder, Key<T> key, Constructor<T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source, AsynchronousClassFactory asyncClassFactory, EnhancerFactory enhancerFactory) {
-		if(key==null) { throw new NullPointerException(); }
+	public AsynchronousBinding(Binder binder, Key<? super T> sourceKey, Key<T> targetKey, Constructor<T> c, Collection<InterceptorElement> interceptors, ScopeBinding scopeBinding, Object source, AsynchronousClassFactory asyncClassFactory, EnhancerFactory enhancerFactory) {
+		if(targetKey==null) { throw new NullPointerException(); }
 		
 		this.binder = binder;
 		
-		this.key = key;
+		this.sourceKey = sourceKey;
+		this.targetKey = targetKey;
 		this.constructor = c;
 		this.interceptors = interceptors;
 		this.scopeBinding = scopeBinding;
@@ -57,28 +59,29 @@ public class AsynchronousBinding<T> implements Binding  {
 	}
 	
 	public void bind() {
-        final AsynchronousClass<?> asyncClass = asyncClassFactory.createAsynchronousClass(key, constructor, interceptors);
+        final AsynchronousClass<?> asyncClass = asyncClassFactory.createAsynchronousClass(targetKey, constructor, interceptors);
         final EnhancerData enhancerData = enhancerFactory.createEnhancer(asyncClass);
 		
-		setWithSource(binder);
+		setSource();
         
         // create the private binder
         PrivateBinder privateBinder = binder.newPrivateBinder();
 
-        privateBinder.install(new AsynchronousBindingModule(key, scopeBinding, asyncClass, enhancerData));
+        privateBinder.install(new AsynchronousBindingModule<T>(sourceKey, targetKey, scopeBinding, asyncClass, enhancerData));
         
         // Expose the key 
-        privateBinder.expose(key);
+        privateBinder.expose(sourceKey);
     }
 	
-	private void setWithSource(Binder binder) {
+	private void setSource() {
         if(source!=null) binder.withSource(source);
     }
-    
+
 	@Override
 	public String toString() {
 		return "AsynchronousBinding [asyncClassFactory=" + asyncClassFactory
-				+ ", enhancerFactory=" + enhancerFactory + ", key=" + key
+				+ ", enhancerFactory=" + enhancerFactory + ", binder=" + binder
+				+ ", sourceKey=" + sourceKey + ", targetKey=" + targetKey
 				+ ", constructor=" + constructor + ", interceptors="
 				+ interceptors + ", scopeBinding=" + scopeBinding + ", source="
 				+ source + "]";

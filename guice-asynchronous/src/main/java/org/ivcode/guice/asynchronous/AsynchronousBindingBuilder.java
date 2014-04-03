@@ -19,6 +19,6 @@ import java.lang.reflect.Constructor;
 
 import com.google.inject.binder.ScopedBindingBuilder;
 
-public interface AsynchronousBuilder<T> extends ScopedBindingBuilder {
+public interface AsynchronousBindingBuilder<T> extends ScopedBindingBuilder {
 	public ScopedBindingBuilder withConstructor(Constructor<T> c);
 }
