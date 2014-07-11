@@ -23,6 +23,7 @@ import org.ivcode.guice.asynchronous.internal.processor.FactoryBindingBuilderImp
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.PrivateBinder;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matcher;
@@ -210,6 +211,11 @@ public class AsynchronousBinderManager {
 		public void install(AsynchronousModule module) {
 			module.configure(this);
 		}
+		
+		@Override
+		public void install(Module module) {
+			module.configure(this);
+		}
 	}
 	
 	private class MyAsynchronousPrivateBinder extends PrivateBinderWrapper implements AsynchronousPrivateBinder {
@@ -275,6 +281,11 @@ public class AsynchronousBinderManager {
 		}
 
 		public void install(AsynchronousModule module) {
+			module.configure(this);
+		}
+		
+		@Override
+		public void install(Module module) {
 			module.configure(this);
 		}
 	}

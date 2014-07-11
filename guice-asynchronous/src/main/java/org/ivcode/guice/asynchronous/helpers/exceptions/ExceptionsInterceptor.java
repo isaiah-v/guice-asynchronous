@@ -26,12 +26,12 @@ import org.ivcode.guice.asynchronous.internal.proxy.StacktracePruner;
 
 /**
  * A helper intercepter intended to aid in exception handling and processing for
- * asynchronous tasks. Currently it supports two mechanisms:<br/>
- * <br/>
+ * asynchronous tasks. Currently it supports two mechanisms:<br>
+ * <br>
  * 1) {@link CallbackExceptions}: forwards uncaught exceptions to
- * {@link Callback}s<br/>
+ * {@link Callback}s<br>
  * 2) {@link FailFast}: helps operations fail-fast when an asynchronous task
- * throws an exception<br/>
+ * throws an exception<br>
  * 
  * @author Isaiah van der Elst
  */
