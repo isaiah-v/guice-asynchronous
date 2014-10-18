@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.inject;
+package org.ivcode.guice.asynchronous.internal.utils;
 
 import java.lang.reflect.Type;
 
+import com.google.inject.TypeLiteral;
 import com.google.inject.util.Types;
 
 /**
- * A
+ * A factory class for creating {@link TypeLiteral}s
  * 
  * @author Isaiah van der Elst
  */
@@ -40,9 +41,10 @@ public class TypeLiteralFactory {
 	 * @return a {@link TypeLiteral} that's of the given type ({@code rawType})
 	 *         and containing the given generic types ({@code typeArguments})
 	 */
+	@SuppressWarnings("unchecked")
 	public static <T> TypeLiteral<T> createParameterizedTypeLiteral(Type rawType, Type... typeArguments) {
 		// operation is not type safe (be careful)
 		Type t = Types.newParameterizedType(rawType, typeArguments);
-		return new TypeLiteral<T>(t);
+		return (TypeLiteral<T>) TypeLiteral.get(t);
 	}
 }

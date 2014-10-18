@@ -1,6 +1,7 @@
 package org.ivcode.guice.asynchronous.internal.binding;
 
 import static org.ivcode.guice.asynchronous.internal.binding.Utils.*;
+import static org.ivcode.guice.asynchronous.internal.utils.TypeLiteralFactory.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -17,7 +18,6 @@ import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
-import com.google.inject.TypeLiteralFactory;
 
 public class FactoryBindingModule implements Module {
 	
@@ -63,7 +63,7 @@ public class FactoryBindingModule implements Module {
 	}
 	
 	private <T> TypeLiteral<Map<Method,int[]>> createMappingType() {
-        return TypeLiteralFactory.createParameterizedTypeLiteral(Map.class, Method.class, int[].class);
+        return createParameterizedTypeLiteral(Map.class, Method.class, int[].class);
     }
 	
 	@SuppressWarnings("unchecked")
@@ -72,7 +72,7 @@ public class FactoryBindingModule implements Module {
 	}
 	
 	private <T> TypeLiteral<Class<T>> createClassType(Key<T> key) {
-        return TypeLiteralFactory.createParameterizedTypeLiteral(Class.class, key.getTypeLiteral().getRawType());
+        return createParameterizedTypeLiteral(Class.class, key.getTypeLiteral().getRawType());
     }
 	
 	/**
