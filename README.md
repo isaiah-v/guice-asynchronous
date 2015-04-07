@@ -23,4 +23,4 @@ Our solution is to wrap Guice's AOP functionality with our own proxy and offload
 
   * Asynchronous methods must return void (See Callbacks & Futures)
   * The just-in-time binder dose not asynchronise methods. Classes must be explicitly bound.
-<font size='1'>See <a href='https://code.google.com/p/google-guice/wiki/AOP#Limitations'>Guice's AOP Limitations</a> for general limitations regarding AOP.</font>
+<font size='1'>See <a href='https://github.com/google/guice/wiki/AOP#limitations'>Guice's AOP Limitations</a> for general limitations regarding AOP.</font>
