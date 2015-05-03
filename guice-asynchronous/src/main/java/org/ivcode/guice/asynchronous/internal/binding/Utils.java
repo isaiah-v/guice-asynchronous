@@ -8,17 +8,17 @@ import org.ivcode.guice.asynchronous.internal.proxy.EnhancerProvider;
 import org.ivcode.guice.asynchronous.internal.proxy.factory.FactoryInvocationHandler;
 import org.ivcode.guice.asynchronous.internal.proxy.factory.FactoryProxyProvider;
 import org.ivcode.guice.asynchronous.internal.utils.AssistedProvider;
+import org.ivcode.guice.asynchronous.internal.utils.TypeLiteralFactory;
 
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import com.google.inject.util.Types;
 
 public class Utils {
 	
 	static <T> TypeLiteral<EnhancerProvider<T>> createEnhancerProviderType(Key<T> key) {
         Type mainType = EnhancerProvider.class;
         Type genaricType = key.getTypeLiteral().getType();
-        return createParameterizedTypeLiteral(Types.newParameterizedType(mainType, genaricType));
+        return TypeLiteralFactory.createParameterizedTypeLiteral(mainType, genaricType);
     }
 	
 	static <T> TypeLiteral<AssistedProvider<T>> createAssistedProviderType(Key<T> key) {
